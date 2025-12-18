@@ -1,0 +1,113 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secret-manager
+  namespace: nifi
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: default-secret-access
+  namespace: nifi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: secret-manager
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: nifi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nifi-cert-generator
+  namespace: nifi
+spec:
+  completions: 1
+  backoffLimit: 0
+  template:
+    spec:
+      containers:
+      - name: cert-generator
+        image: alpine:latest  # ← МЕНЯЕМ НА ALPINE
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          # Устанавливаем openssl и kubectl
+          apk add --no-cache openssl curl
+          
+          # Устанавливаем kubectl
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl && mv kubectl /usr/local/bin/
+          
+          echo "🔐 Создаём корневой CA 'My-NiFi-Client-CA'..."
+          openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
+            -keyout /tmp/ca.key -out /tmp/ca.crt \
+            -subj "/CN=My-NiFi-Client-CA" \
+            -addext "basicConstraints=critical,CA:TRUE"
+          
+          echo "👤 Создаём клиентский сертификат 'nifi-operator-client'..."
+          openssl req -newkey rsa:4096 -nodes -keyout /tmp/client.key \
+            -out /tmp/client.csr \
+            -subj "/CN=nifi-operator-client"
+          
+          openssl x509 -req -in /tmp/client.csr -CA /tmp/ca.crt -CAkey /tmp/ca.key \
+            -CAcreateserial -out /tmp/client.crt -days 365 \
+            -sha256 -copy_extensions copyall
+          
+          echo "🔗 Создаём полную цепочку сертификатов..."
+          cat /tmp/client.crt /tmp/ca.crt > /tmp/full-chain.pem
+          
+          echo "✅ Проверяем цепочку..."
+          if openssl verify -CAfile /tmp/ca.crt /tmp/client.crt; then
+            echo "✅ Проверка пройдена"
+            
+            echo "💾 Создаём секрет с корневым CA..."
+            kubectl create secret generic nifi-mtls-ca-secret \
+              --from-file=ca.crt=/tmp/ca.crt \
+              --dry-run=client -o yaml | kubectl apply -f -
+            
+            echo "💾 Создаём секрет с клиентским сертификатом..."
+            kubectl create secret tls nificl-sa-cert \
+              --cert=/tmp/full-chain.pem \
+              --key=/tmp/client.key \
+              --dry-run=client -o yaml | kubectl apply -f -
+            
+            echo "🎉 ВСЁ ГОТОВО! Секреты созданы."
+          else
+            echo "❌ ОШИБКА: Проверка цепочки не пройдена"
+            exit 1
+          fi
+        env:
+        - name: KUBECONFIG
+          value: "/var/run/secrets/kubernetes.io/serviceaccount/.kube/config"
+        volumeMounts:
+        - name: serviceaccount
+          mountPath: "/var/run/secrets/kubernetes.io/serviceaccount"
+          readOnly: true
+      serviceAccountName: default
+      automountServiceAccountToken: true
+      restartPolicy: Never
+      volumes:
+      - name: serviceaccount
+        projected:
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3600
+              path: token
+          - configMap:
+              name: kube-root-ca.crt
+              items:
+              - key: ca.crt
+                path: ca.crt
+          - downwardAPI:
+              items:
+              - path: namespace
+                fieldRef:
+                  fieldPath: metadata.namespace

@@ -1,0 +1,102 @@
+# kcl/templates/StatefulSet.yaml
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  serviceName: keycloak-discovery
+  replicas: {{ .Values.keycloak.replicas }}
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:15
+          command: 
+            - /bin/sh
+            - -c
+            - |
+              until pg_isready -h {{ .Values.postgres.serviceName }} -p 5432 -U {{ .Values.postgres.dbUser }}; do
+                echo "Waiting for PostgreSQL to be ready..."
+                sleep 2
+              done
+          env:
+            - name: PGPASSWORD
+              value: "keycloak"
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.4.2
+          args: ["start"]
+          env:
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              value: "{{ .Values.postgres.KC_BOOTSTRAP_ADMIN_USERNAME }}"
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              value: "{{ .Values.postgres.KC_BOOTSTRAP_ADMIN_PASSWORD }}"
+            - name: KC_PROXY_HEADERS
+              value: "xforwarded"
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            - name: KC_CACHE
+              value: "ispn"
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: KC_CACHE_EMBEDDED_NETWORK_BIND_ADDRESS
+              value: '$(POD_IP)'
+            - name: KC_DB_URL_DATABASE
+              value: '{{ .Values.postgres.dbName }}'
+            - name: KC_DB_URL_HOST
+              value: '{{ .Values.postgres.serviceName }}'
+            - name: KC_DB       # тип базы данных (database vendor).
+              value: 'postgres'
+            - name: KC_DB_PASSWORD
+              value: '{{ .Values.postgres.dbPassword }}'
+            - name: KC_DB_USERNAME
+              value: '{{ .Values.postgres.dbUser }}'
+            - name: KC_DB_URL_PORT
+              value: '5432'
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: jgroups
+              containerPort: 7800
+            - name: jgroups-fd
+              containerPort: 57800
+          startupProbe:
+            httpGet:
+              path: /health/started
+              port: 9000
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 9000
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 9000
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 2000Mi
+            requests:
+              cpu: 500m
+              memory: 1700Mi

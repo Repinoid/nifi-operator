@@ -1,0 +1,127 @@
+# kube5s/kube.yaml
+# ИСПРАВЛЕНИЕ: Добавлены параметры nifiServiceUrl и proxyHost в секцию adminGateway
+# для конфигурации admin-gateway из CRD
+
+apiVersion: nifi.kube5s.ru/v1alpha1
+kind: NifiCluster
+metadata:
+  name: nificl        # pod name will be nificl-0
+  namespace: nifi
+spec:
+  # пока только одна реплика allowed
+  replicaCount: 1
+  image: "apache/nifi:2.6.0"
+
+  auth:
+    oidc:
+      enabled: true
+      realmName: "nifi-realm"
+      # Здесь keycloak.k8c.ru - URL кейклока, имя реалма nifi-realm
+      discoveryURL: "https://keyc.kube5s.ru/realms/nifi-realm/.well-known/openid-configuration" # ***
+      clientID: "nifi-keycloak-client"
+      clientSecret: "YpsjYPw3l9iFNCZcLnOWWgYIfrPdUms5"  # ***
+
+      keycloakCert: "keycloak-nifi-secret"
+      # keycloakCert: "keycloak-new-nifi-secret"  # БЫЛО: "keycloak-nifi-secret"
+      
+      keystorePassword: "changeme"
+      truststorePassword: "changeme"
+      keyPassword: "changeme"
+
+    clientGroup:  "nifi_clients"
+    adminGroup:   "nifi_admins"
+    # take from KeyCloak - Clients - Client details - Dedicated scopes - Mapper details - Token Claim Name
+    tokenClaimName: "nifi_groups"
+    
+  env:
+    webHttpsHost: "0.0.0.0"
+    webHttpsPort: "8443"
+    webProxyHost: "niffy.kube5s.ru:443" # ***
+    logLevel: "DEBUG"
+    securityNeedClientAuth: "false"
+    clusterIsNode: "false"
+    remoteInputSecure: "true"
+    remoteInputSocketPort: "10443"
+    webProxyScheme: "https"
+    webHttpContextPath: "/nifi"
+  
+  storage:
+    config:
+      size: "333Mi"
+      storageClass: "local-path"
+    flowFile:
+      size: "300Mi"
+      storageClass: "local-path"
+    content:
+      size: "300Mi"
+      storageClass: "local-path"
+    provenance:
+      size: "300Mi"
+      storageClass: "local-path"
+    database:
+      size: "300Mi"
+      storageClass: "local-path"
+    logs:
+      size: "300Mi"
+      storageClass: "local-path"
+  
+  init:
+    initImage: "naeel/nifi-setup:v0.1.24"
+    # UWAGA - overWrite для отладки, если true - при перезагрузке перезапишет файлы конфигурации в дефолтные, 
+    # потерев новых юзеров группы права и тд
+    overWrite: true
+  
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+
+  serviceAccount:
+    secretName: "nificl-sa-cert"
+    cN: "nifi-operator-client"    
+  
+  
+  # ADMIN GATEWAY - доступ к Nifi API
+  adminGateway:
+    enabled: true
+    image: "naeel/nifi-admin-gateway:https-v8"
+    serviceType: "ClusterIP"
+    
+    # НОВЫЕ ПАРАМЕТРЫ: конфигурация для admin-gateway
+    # nifiServiceUrl: "https://nificl.nifi:8443"
+    nifiServiceUrl: "https://nificl.nifi.svc.cluster.local:8443"  # ← ПОЛНОЕ DNS имя
+    proxyHost: "niffy.kube5s.ru:8443" # ***
+    
+    tls:
+      secretName: "nifi-admin-gateway-tls-secret"
+    
+    ingress:
+      enabled: true
+      host: "api.kube5s.ru" # ***
+      className: "nginx"
+      path: "/nifi-api/"
+    
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+  
+  ingress:
+    enabled: true
+    className: "nginx"
+    host: "niffy.kube5s.ru" # ***
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+      nginx.ingress.kubernetes.io/proxy-body-size: 110m
+      nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    tls:
+      - hosts:
+          - niffy.kube5s.ru # ***
+        secretName: nifi-tls-secret

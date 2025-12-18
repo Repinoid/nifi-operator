@@ -1,0 +1,14 @@
+# PersistentVolumeClaim.yaml
+# не должен находиться в templates, запускать вручную kubectl apply -f PersistentVolumeClaim.yaml
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: keycloak-postgres-pvc # the same as in PersistentVolumeClaim.yaml
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 300Mi
+     

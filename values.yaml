@@ -1,0 +1,32 @@
+# values.yaml
+
+keycloak:
+  replicas: 1
+  service:
+    name: keycloak-service
+
+
+postgres:
+  enabled: true
+  replicas: 1
+  serviceName: postgres-service
+  image:
+    repository: postgres
+    tag: 15
+    pullPolicy: IfNotPresent
+  dbUser: keycloak
+  dbPassword: keycloak
+  dbName: keycloak
+  dbHost: postgres
+  dbPort: 5432
+  KC_BOOTSTRAP_ADMIN_USERNAME: admin
+  KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+  claimName: keycloak-postgres-pvc           # the same as in values.yaml
+
+
+ingress:
+  enabled: 
+  name: keycloak-ingress
+  host: keyc.kube5s.ru
+  secretName: keycloak-tls-secret
+
