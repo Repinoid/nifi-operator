@@ -14,7 +14,7 @@
 
 ### Создаём сертификаты
 
-``` openssl s_client \
+`` openssl s_client \
   -connect keycloak.domen.ru:443 \
   -servername keycloak.domen.ru \
   -showcerts \
@@ -22,7 +22,7 @@
   | sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' \
   | kubectl create secret generic keycloak-nifi-secret \
       --from-file=tls.crt=/dev/stdin \
-      -n nifi ```
+      -n nifi ``
 
 - `kubectl apply -f nifi-tls-secret.yaml -n nifi`
 
