@@ -11,14 +11,16 @@
 - `kubectl apply -f PersistentVolumeClaim.yaml -n keycloak`
 
 ### создать секрет
-- kubectl apply -f keycloak-tls-secret.yaml  -n keycloak
+- `kubectl apply -f keycloak-tls-secret.yaml  -n keycloak`
 
 ### Запустить Helm Chart, kkk - заменить имя на своё
-- helm install kkk . -n keycloak
+- `helm install kkk . -n keycloak`
 
-### В браузере - ваш keycloak, т.е. ingress.host
+### В браузере - ваш keycloak, т.е. ingress.host (aka https://keycloak.domen.ru)
 - username admin, password admin
+- в дальнейшем заведёте новое имя для администратора 
 
+## Настройки
 ### Manage realms - Create realm - Realm name - "nifi-realm" 
 - nifi-realm должен быть Current realm
 ### Clients - Create client - 
@@ -31,7 +33,7 @@ Next
 - PKCE Method - ничего не выбирать, оставить Choose ...
 - Require DPoP bound tokens OFF
 Next
-- Root URL: https://<ваш хост NIFI>
+- Root URL: https://<ваш хост NIFI> ``(aka https://nifi.domen.ru)``
 - Home URL: https://<ваш хост NIFI>
 - Valid redirect URIs: https://<ваш хост NIFI>:443/nifi-api/access/oidc/callback
 - Valid post logout redirect URIs: https://<ваш хост NIFI>* (именно звёздочка на конце)
@@ -39,7 +41,7 @@ Next
 Save
 - Перейти во вкладку Credentials (Clients-nifi-keycloak-client-Credentials)
 - Client Authenticator: Client ID and Secret
-- Client Secret - скопировать и запомнить
+- ``Client Secret`` - скопировать и запомнить (для CR NIFI)
 - Перейти во вкладку Client scopes
 - Войти в nifi-keycloak-client-dedicated 
 - Configure a new mapper
@@ -68,13 +70,12 @@ Save, на страницу назад
 ### Из левого основного меню - Users
 - Create user
 - Email verified: ON
-- Username - админовское, etc - заполнить, иначе потом будет спрашивать
-- Join groups: nifi_admins
+- Username - админовское
+- E-Mail имя - заполнить, иначе потом будет спрашивать
+- Join groups: nifi_admins (ОБЯЗАТЕЛЬНО)
 - Вкладка Credentials
 - Set password
 - Temporary - УБРАТЬ в off
 
 ### готово !
 
-
-openssl s_client -connect keyc.kube5s.ru:443 -servername keyc.kube5s.ru -showcerts </dev/null 2>/dev/null | sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' | kubectl create secret generic keycloak-nifi-secret --from-file=tls.crt=/dev/stdin

@@ -22,7 +22,6 @@ spec:
       clientSecret: "YpsjYPw3l9iFNCZcLnOWWgYIfrPdUms5"  # ***
 
       keycloakCert: "keycloak-nifi-secret"
-      # keycloakCert: "keycloak-new-nifi-secret"  # БЫЛО: "keycloak-nifi-secret"
       
       keystorePassword: "changeme"
       truststorePassword: "changeme"

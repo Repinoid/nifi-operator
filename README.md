@@ -1,10 +1,28 @@
-kubectl create namespace nifi
+# Настройка NIFI
+## Надо иметь три (суб)домена. 
+- ``nifi.domen.ru`` - собственно для NIFI
+- ``api.domen.ru`` - для NIFI API
+- `keycloak.domen.ru` - keycloak, опционально, если нет иного функционирующего keycloak
 
-там где nifi.k8c.ru - заменить на свой домен
+### Во всех файлах заменить шаблоны nifi.domen.ru, api.domen.ru, keycloak.domen.ru на свои реальные
 
-keycloak.___.ru - ваш keycloak 
+### Деплой/Настройка Keycloak
+- в файле KeyCloak.md
 
-openssl s_client -connect keycloak.___.ru:443 -servername keycloak.___.ru -showcerts </dev/null 2>/dev/null | sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' | kubectl create secret generic keycloak-nifi-secret --from-file=tls.crt=/dev/stdin -n nifi
+### Создаём namespace
+- ```kubectl create namespace nifi```
+
+### Создаём сертификаты
+
+`` openssl s_client \
+  -connect keycloak.domen.ru:443 \
+  -servername keycloak.domen.ru \
+  -showcerts \
+  </dev/null 2>/dev/null \
+  | sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' \
+  | kubectl create secret generic keycloak-nifi-secret \
+      --from-file=tls.crt=/dev/stdin \
+      -n nifi ``
 
 kubectl apply -f nifi-tls-secret.yaml -n nifi
 
