@@ -41,7 +41,7 @@ Next
 Save
 - Перейти во вкладку Credentials (Clients-nifi-keycloak-client-Credentials)
 - Client Authenticator: Client ID and Secret
-- `Client Secret` - скопировать и запомнить (для CR NIFI)
+- `Client Secret` - **скопировать и запомнить (для CR NIFI)**
 - Перейти во вкладку Client scopes
 - Войти в nifi-keycloak-client-dedicated 
 - Configure a new mapper
@@ -72,7 +72,7 @@ Save, на страницу назад
 - Email verified: **ON**
 - Username - админовское
 - E-Mail имя - заполнить, иначе потом будет спрашивать
-- Join groups: nifi_admins (ОБЯЗАТЕЛЬНО)
+- Join groups: **nifi_admins** ***(ОБЯЗАТЕЛЬНО)***
 - Вкладка Credentials
 - Set password
 - Temporary - УБРАТЬ в **off**

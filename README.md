@@ -7,7 +7,7 @@
 ### Во всех файлах заменить шаблоны NIFI.DOMEN.RU, API.DOMEN.RU, KEYCLOAK.DOMEN.RU на свои реальные
 
 ### Деплой/Настройка Keycloak
-- в файле **KeyCloak.md**
+- инструкция в файле **KeyCloak.md**
 - `Client Secret` - что был запомнен - прописать в **clientSecret** в **nifi.yaml**
 
 ### nifi.yaml
