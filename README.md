@@ -1,8 +1,8 @@
 # Настройка NIFI
 ## Надо иметь три (суб)домена. 
-- `NIFI.DOMEN.RU` - собственно для NIFI
-- `API.DOMEN.RU` - для NIFI API
-- `KEYCLOAK.DOMEN.RU` - keycloak, опционально, если нет иного функционирующего keycloak
+- **NIFI.DOMEN.RU** - собственно для NIFI
+- **API.DOMEN.RU** - для NIFI API
+- **KEYCLOAK.DOMEN.RU** - keycloak, опционально, если нет иного функционирующего keycloak
 
 ### Во всех файлах заменить шаблоны NIFI.DOMEN.RU, API.DOMEN.RU, KEYCLOAK.DOMEN.RU на свои реальные
 
