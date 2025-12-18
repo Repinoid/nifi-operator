@@ -7,7 +7,7 @@
 ### Во всех файлах заменить шаблоны NIFI.DOMEN.RU, API.DOMEN.RU, KEYCLOAK.DOMEN.RU на свои реальные
 
 ### Деплой/Настройка Keycloak
-- в файле KeyCloak.md
+- в файле **KeyCloak.md**
 
 ### Создаём namespace
 - ```kubectl create namespace nifi```
@@ -53,4 +53,9 @@ kubectl delete job nifi-cert-generator -n nifi  `
 - входим юзером которого создали в keycloak и поместили в группу nifi_admins
 - в UI группе nifi_clients назначаем police view the user interface (иначе пользователем из этой группы в UI не войдёте и зациклитесь на входе)
 
+### https://API.DOMEN.RU 
+- прокси, ретранслирует запросы к NIFI API. 
+- Доступ **пока без пароля и сертификатов**
 
+- пример - `https://API.DOMEN.RU/nifi-api/tenants/users`
+- REST API definition for Apache NiFi web services - ***https://nifi.apache.org/nifi-docs/rest-api.html***
