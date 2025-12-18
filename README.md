@@ -32,7 +32,7 @@
 kubectl wait --for=condition=complete job/nifi-cert-generator -n nifi --timeout=300s && \  
 kubectl delete job nifi-cert-generator -n nifi  
 
-- kubectl get secret -n nifi
+- `kubectl get secret -n nifi`  
 Должно быть такое -
 `keycloak-nifi-secret            Opaque              1      3m31s  
 nifi-admin-gateway-tls-secret   kubernetes.io/tls   2      6m19s  
