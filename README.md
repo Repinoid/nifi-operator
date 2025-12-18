@@ -1,10 +1,10 @@
 # Настройка NIFI
 ## Надо иметь три (суб)домена. 
-- ``nifi.domen.ru`` - собственно для NIFI
-- ``api.domen.ru`` - для NIFI API
-- `keycloak.domen.ru` - keycloak, опционально, если нет иного функционирующего keycloak
+- `NIFI.DOMEN.RU` - собственно для NIFI
+- `API.DOMEN.RU` - для NIFI API
+- `KEYCLOAK.DOMEN.RU` - keycloak, опционально, если нет иного функционирующего keycloak
 
-### Во всех файлах заменить шаблоны nifi.domen.ru, api.domen.ru, keycloak.domen.ru на свои реальные
+### Во всех файлах заменить шаблоны NIFI.DOMEN.RU, API.DOMEN.RU, KEYCLOAK.DOMEN.RU на свои реальные
 
 ### Деплой/Настройка Keycloak
 - в файле KeyCloak.md
@@ -15,8 +15,8 @@
 ### Создаём сертификаты
 
 - ` openssl s_client \  
-  -connect keycloak.domen.ru:443 \  
-  -servername keycloak.domen.ru \  
+  -connect KEYCLOAK.DOMEN.RU:443 \  
+  -servername KEYCLOAK.DOMEN.RU \  
   -showcerts \  
   </dev/null 2>/dev/null \  
   | sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' \  
@@ -49,7 +49,7 @@ kubectl delete job nifi-cert-generator -n nifi  `
 - `kubectl get pod -w -n nifi`
 
 
-## В браузере https://nifi.domen.ru
+## В браузере https://NIFI.DOMEN.RU
 - входим юзером которого создали в keycloak и поместили в группу nifi_admins
 - в UI группе nifi_clients назначаем police view the user interface (иначе пользователем из этой группы в UI не войдёте и зациклитесь на входе)
 
