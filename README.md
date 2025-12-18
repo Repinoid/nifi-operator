@@ -8,6 +8,10 @@
 
 ### Деплой/Настройка Keycloak
 - в файле **KeyCloak.md**
+- `Client Secret` - что был запомнен - прописать в **clientSecret** в **nifi.yaml**
+
+### nifi.yaml
+- для запуска достаточно заменить NIFI.DOMEN.RU, API.DOMEN.RU, KEYCLOAK.DOMEN.RU на реальные, clientSecret и всё.
 
 ### Создаём namespace
 - ```kubectl create namespace nifi```
@@ -51,7 +55,7 @@ kubectl delete job nifi-cert-generator -n nifi  `
 
 ## В браузере https://NIFI.DOMEN.RU
 - входим юзером которого создали в keycloak и поместили в группу nifi_admins
-- в UI группе nifi_clients назначаем police view the user interface (иначе пользователем из этой группы в UI не войдёте и зациклитесь на входе)
+- в UI **группе** nifi_clients назначаем police `view the user interface` (иначе пользователем из этой группы в UI не войдёте и зациклитесь на входе)
 
 ### https://API.DOMEN.RU 
 - прокси, ретранслирует запросы к NIFI API. 

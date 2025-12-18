@@ -6,9 +6,9 @@ metadata:
   namespace: nifi                # Важно! Секрет создастся в namespace nifi
 spec:
   secretName: nifi-admin-gateway-tls-secret  # Имя создаваемого TLS-секрета (должно совпадать с secretName в Ingress!)
-  commonName: api.kube5s.ru
+  commonName: API.DOMEN.RU
   dnsNames:
-    - api.kube5s.ru
+    - API.DOMEN.RU
   issuerRef:
     group: cert-manager.io
     kind: ClusterIssuer

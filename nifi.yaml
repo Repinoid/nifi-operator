@@ -16,10 +16,10 @@ spec:
     oidc:
       enabled: true
       realmName: "nifi-realm"
-      # Здесь keycloak.k8c.ru - URL кейклока, имя реалма nifi-realm
-      discoveryURL: "https://keyc.kube5s.ru/realms/nifi-realm/.well-known/openid-configuration" # ***
+      # Здесь KEYCLOAK.DOMEN.RU - URL кейклока, имя реалма nifi-realm
+      discoveryURL: "https://KEYCLOAK.DOMEN.RU/realms/nifi-realm/.well-known/openid-configuration" # ***
       clientID: "nifi-keycloak-client"
-      clientSecret: "YpsjYPw3l9iFNCZcLnOWWgYIfrPdUms5"  # ***
+      clientSecret: "YpsjYPw3l9iFNCZc........."  # *** Это из keycloak,  Clients-nifi-keycloak-client-Credentials
 
       keycloakCert: "keycloak-nifi-secret"
       
@@ -35,7 +35,7 @@ spec:
   env:
     webHttpsHost: "0.0.0.0"
     webHttpsPort: "8443"
-    webProxyHost: "niffy.kube5s.ru:443" # ***
+    webProxyHost: "NIFI.DOMEN.RU:443" # ***
     logLevel: "DEBUG"
     securityNeedClientAuth: "false"
     clusterIsNode: "false"
@@ -44,6 +44,7 @@ spec:
     webProxyScheme: "https"
     webHttpContextPath: "/nifi"
   
+  # vcd-disk-ext4 также доступен
   storage:
     config:
       size: "333Mi"
@@ -92,14 +93,14 @@ spec:
     # НОВЫЕ ПАРАМЕТРЫ: конфигурация для admin-gateway
     # nifiServiceUrl: "https://nificl.nifi:8443"
     nifiServiceUrl: "https://nificl.nifi.svc.cluster.local:8443"  # ← ПОЛНОЕ DNS имя
-    proxyHost: "niffy.kube5s.ru:8443" # ***
+    proxyHost: "NIFI.DOMEN.RU:8443" # ***
     
     tls:
       secretName: "nifi-admin-gateway-tls-secret"
     
     ingress:
       enabled: true
-      host: "api.kube5s.ru" # ***
+      host: "API.DOMEN.RU" # ***
       className: "nginx"
       path: "/nifi-api/"
     
@@ -114,7 +115,7 @@ spec:
   ingress:
     enabled: true
     className: "nginx"
-    host: "niffy.kube5s.ru" # ***
+    host: "NIFI.DOMEN.RU" # ***
     annotations:
       nginx.ingress.kubernetes.io/backend-protocol: HTTPS
       nginx.ingress.kubernetes.io/proxy-body-size: 110m
@@ -122,5 +123,5 @@ spec:
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
     tls:
       - hosts:
-          - niffy.kube5s.ru # ***
+          - NIFI.DOMEN.RU # ***
         secretName: nifi-tls-secret

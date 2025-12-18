@@ -27,6 +27,6 @@ postgres:
 ingress:
   enabled: 
   name: keycloak-ingress
-  host: keyc.kube5s.ru
+  host: KEYCLOAK.DOMEN.RU
   secretName: keycloak-tls-secret
 
