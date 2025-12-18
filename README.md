@@ -28,7 +28,7 @@
 
 - `kubectl apply -f certificate-api.yaml -n nifi`
 
-kubectl apply -f nifi-cert-generator-job.yaml -n nifi && \  
+- kubectl apply -f nifi-cert-generator-job.yaml -n nifi && \  
 kubectl wait --for=condition=complete job/nifi-cert-generator -n nifi --timeout=300s && \  
 kubectl delete job nifi-cert-generator -n nifi  
 
