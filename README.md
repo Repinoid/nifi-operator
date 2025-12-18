@@ -34,18 +34,18 @@ kubectl delete job nifi-cert-generator -n nifi
 
 - kubectl get secret -n nifi
 Должно быть такое -
-```keycloak-nifi-secret            Opaque              1      3m31s  
+`keycloak-nifi-secret            Opaque              1      3m31s  
 nifi-admin-gateway-tls-secret   kubernetes.io/tls   2      6m19s  
 nifi-mtls-ca-secret             Opaque              1      16s  
 nifi-tls-secret                 kubernetes.io/tls   2      6m31s  
-nificl-sa-cert                  kubernetes.io/tls   2      16s```
+nificl-sa-cert                  kubernetes.io/tls   2      16s`  
 
 ### Запускаем оператор
-- kubectl apply -f nifi-operator-deployment-v02.yaml
+- `kubectl apply -f nifi-operator-deployment-v02.yaml`
 ### Запускаем NIFI
-- kubectl apply -f nifi.yaml -n nifi
+- `kubectl apply -f nifi.yaml -n nifi`
 ### Отслеживаем деплой
-- kubectl get pod -w -n nifi
+- `kubectl get pod -w -n nifi`
 
 
 ## В браузере https://nifi.domen.ru
