@@ -8,7 +8,7 @@
 - values.yaml
 
 ### создать volume
-- kubectl apply -f PersistentVolumeClaim.yaml -n keycloak
+- `kubectl apply -f PersistentVolumeClaim.yaml -n keycloak`
 
 ### создать секрет
 - kubectl apply -f keycloak-tls-secret.yaml  -n keycloak
