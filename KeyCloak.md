@@ -26,19 +26,19 @@
 ### Clients - Create client - 
 - Client type - **OpenID connect**
 - Client ID - **nifi-keycloak-client**
-Next
+<br>Next
 - Client authentication - **ON**
 - Authorization - **OFF**
 - Authentication flow - пометить **Standard flow, Direct access grants, Service accounts roles**
 - PKCE Method - ничего не выбирать, оставить Choose ...
 - Require DPoP bound tokens **OFF**
-Next
+<br>Next
 - Root URL: https://<ваш хост NIFI> ``(aka https://nifi.domen.ru)``
 - Home URL: https://<ваш хост NIFI>
 - Valid redirect URIs: https://<ваш хост NIFI>:443/nifi-api/access/oidc/callback
 - Valid post logout redirect URIs: https://<ваш хост NIFI>* (именно звёздочка на конце)
 - Web origins: https://<ваш хост NIFI>
-Save
+<br>Save
 - Перейти во вкладку Credentials (Clients-nifi-keycloak-client-Credentials)
 - Client Authenticator: Client ID and Secret
 - `Client Secret` - **скопировать и запомнить (для CR NIFI)**
@@ -50,7 +50,7 @@ Save
 - Token Claim Name: **nifi_groups**
 - Full group path **OFF**
 - Add to lightweight access token: **OFF**, остальные - **ON**
-Save, на страницу назад
+<br>Save, на страницу назад
 - Add Mapper
 - By configuration
 - User Realm Role
