@@ -97,9 +97,6 @@ helm install <release-name> . -n keycloak
    - Token Claim Name: `nifi_groups`
    - Claim JSON Type: `string`
 
-> ВАЖНО: при необходимости адаптируйте имена claim'ов под схему, которую ожидает ваш NiFi.
-
-
 ## Группы и пользователи
 1. **Groups** → Create group
    - Name: `nifi_admins`
@@ -119,6 +116,5 @@ helm install <release-name> . -n keycloak
 
 ---
 
-Готово — если нужно, могу добавить пример CR NiFi с заполненными полями клиента/секретом или создать коммит с этими правками.
-
+> Готово 
 
