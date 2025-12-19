@@ -65,7 +65,7 @@ kubectl delete job nifi-cert-generator -n nifi  `
 - пример - `https://API.DOMEN.RU/nifi-api/tenants/users`
 - REST API definition for Apache NiFi web services - ***https://nifi.apache.org/nifi-docs/rest-api.html***
 
-- `kubectl exec -it nificl-0 -- ls -l /opt/nifi/nifi-current/lib-jdbc/`
-Defaulted container "nifi" out of: nifi, nifi-copy-config (init), nifi-config-setup (init), download-jdbc-drivers (init)
-total 1092
--rw-r--r-- 1 nifi nifi 1116727 Dec 19 17:07 postgresql-42.7.8.jar
+- `kubectl exec -it nificl-0 -- ls -l **/opt/nifi/nifi-current/lib-jdbc/**`
+-Defaulted container "nifi" out of: nifi, nifi-copy-config (init), nifi-config-setup (init), download-jdbc-drivers (init)
+> total 1092
+> -rw-r--r-- 1 nifi nifi 1116727 Dec 19 17:07 **postgresql-42.7.8.jar**
