@@ -15,7 +15,7 @@
 
 ### nifi.yaml
 - для запуска достаточно заменить **NIFI.DOMEN.RU, API.DOMEN.RU, KEYCLOAK.DOMEN.RU** на реальные, **clientSecret** из настроек ***keycloak*** и всё.
-- **НОВОЕ** - downloadFiles:
+### НОВОЕ - downloadFiles:
 - перечисленные файлы будут загружены в папку ***/opt/nifi/nifi-current/lib/***
 - `kubectl exec -it nificl-0 -- ls -l /opt/nifi/nifi-current/lib/` - список файлов в той папке
 
