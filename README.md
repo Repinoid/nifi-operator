@@ -74,9 +74,9 @@ kubectl delete job nifi-cert-generator -n nifi  `
 
 - проверить загрузку JAR
 - `kubectl exec -it nificl-0 -- ls -l` **/opt/nifi/nifi-current/lib/**
-nifi-wrapper
+<br>nifi-wrapper
 - `kubectl logs nificl-0 -n nifi | grep 🐺 `
-init copy-config
+<br>init copy-config
 - `kubectl logs nificl-0 -c nifi-copy-config -n nifi | grep 🐸`  
 
 <hr>
