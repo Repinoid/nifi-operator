@@ -17,7 +17,6 @@
 - для запуска достаточно заменить **NIFI.DOMEN.RU, API.DOMEN.RU, KEYCLOAK.DOMEN.RU** на реальные, **clientSecret** из настроек ***keycloak*** и всё.
 ### НОВОЕ в nifi.yaml - downloadFiles:
 - перечисленные файлы будут загружены в папку ***/opt/nifi/nifi-current/lib/***
-- `kubectl exec -it nificl-0 -- ls -l /opt/nifi/nifi-current/lib/` - список файлов в той папке
 
 ### Создаём namespace
 - ```kubectl create namespace nifi```
@@ -71,12 +70,14 @@ kubectl delete job nifi-cert-generator -n nifi  `
 - пример - `https://API.DOMEN.RU/nifi-api/tenants/users`
 - REST API definition for Apache NiFi web services - ***https://nifi.apache.org/nifi-docs/rest-api.html***
 
+<hr>
 - проверить загрузку JAR
 - `kubectl exec -it nificl-0 -- ls -l` **/opt/nifi/nifi-current/lib/**
 
-> kubectl logs nificl-0 -n nifi | grep 🦞  # только download-files
-> kubectl logs nificl-0 -n nifi | grep 🐺  # только nifi-wrapper
-> kubectl logs nificl-0 -c nifi-copy-config -n nifi | grep 🐸  # init copy-config
+- `kubectl logs nificl-0 -n nifi | grep 🐺  # только nifi-wrapper`
+- `kubectl logs nificl-0 -c nifi-copy-config -n nifi | grep 🐸`  # init copy-config
+
+<hr>
 
 - keystorePassword := "changeme"
 - truststorePassword := "changeme"
