@@ -12,6 +12,15 @@ spec:
   replicaCount: 1
   image: "apache/nifi:2.6.0"
 
+  # 🔥 DOWNLOAD FILES: Автоматическая загрузка JAR библиотек в /opt/nifi/nifi-current/lib/
+  # Лог init-контейнера download-files - kubectl logs nificl-0 -c download-files -n nifi
+  # 
+  # список JAR  -  kubectl exec -it nificl-0 -- ls -l /opt/nifi/nifi-current/lib/
+  downloadFiles:
+    - https://jdbc.postgresql.org/download/postgresql-42.7.8.jar
+    # - https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/3.6.1/kafka-clients-3.6.1.jar
+
+
   auth:
     oidc:
       enabled: true
@@ -20,13 +29,8 @@ spec:
       discoveryURL: "https://KEYCLOAK.DOMEN.RU/realms/nifi-realm/.well-known/openid-configuration" # ***
       clientID: "nifi-keycloak-client"
       clientSecret: "YpsjYPw3l9iFNCZc........."  # *** Это из keycloak,  Clients-nifi-keycloak-client-Credentials
-
       keycloakCert: "keycloak-nifi-secret"
       
-      keystorePassword: "changeme"
-      truststorePassword: "changeme"
-      keyPassword: "changeme"
-
     clientGroup:  "nifi_clients"
     adminGroup:   "nifi_admins"
     # take from KeyCloak - Clients - Client details - Dedicated scopes - Mapper details - Token Claim Name
