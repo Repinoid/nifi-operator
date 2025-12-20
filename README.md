@@ -71,11 +71,13 @@ kubectl delete job nifi-cert-generator -n nifi  `
 - REST API definition for Apache NiFi web services - ***https://nifi.apache.org/nifi-docs/rest-api.html***
 
 <hr>
+
 - проверить загрузку JAR
 - `kubectl exec -it nificl-0 -- ls -l` **/opt/nifi/nifi-current/lib/**
-
-- `kubectl logs nificl-0 -n nifi | grep 🐺  # только nifi-wrapper`
-- `kubectl logs nificl-0 -c nifi-copy-config -n nifi | grep 🐸`  # init copy-config
+nifi-wrapper
+- `kubectl logs nificl-0 -n nifi | grep 🐺 `
+init copy-config
+- `kubectl logs nificl-0 -c nifi-copy-config -n nifi | grep 🐸`  
 
 <hr>
 
