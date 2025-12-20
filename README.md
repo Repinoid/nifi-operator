@@ -4,14 +4,17 @@
 - **API.DOMEN.RU** - для NIFI API
 - **KEYCLOAK.DOMEN.RU** - keycloak, опционально, если нет иного функционирующего keycloak
 
-### Во всех файлах заменить шаблоны NIFI.DOMEN.RU, API.DOMEN.RU, KEYCLOAK.DOMEN.RU на свои реальные
+### Во всех файлах заменить шаблонные 
+- **NIFI.DOMEN.RU** 
+- **API.DOMEN.RU**
+- **KEYCLOAK.DOMEN.RU** на свои реальные
 
 ### Деплой/Настройка Keycloak
 - инструкция в файле **KeyCloak.md**
 - `Client Secret` - что был запомнен - прописать в **clientSecret** в **nifi.yaml**
 
 ### nifi.yaml
-- для запуска достаточно заменить **NIFI.DOMEN.RU, API.DOMEN.RU, KEYCLOAK.DOMEN.RU** на реальные, **clientSecret** и всё.
+- для запуска достаточно заменить **NIFI.DOMEN.RU, API.DOMEN.RU, KEYCLOAK.DOMEN.RU** на реальные, **clientSecret** из настроек ***keycloak*** и всё.
 - **НОВОЕ** - downloadFiles:
 - перечисленные файлы будут загружены в папку ***/opt/nifi/nifi-current/lib/***
 - `kubectl exec -it nificl-0 -- ls -l /opt/nifi/nifi-current/lib/` - список файлов в той папке
