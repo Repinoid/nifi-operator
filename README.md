@@ -52,7 +52,7 @@ kubectl delete job nifi-cert-generator -n nifi  `
 - nificl-sa-cert                  kubernetes.io/tls   2      16s
 
 ### Запускаем оператор
-- `kubectl apply -f nifi-operator-deployment-v03.yaml`
+- `kubectl apply -f nifi-operator-deployment-v05.yaml`
 ### Запускаем NIFI
 - `kubectl apply -f nifi.yaml -n nifi`
 ### Отслеживаем деплой
@@ -73,7 +73,7 @@ kubectl delete job nifi-cert-generator -n nifi  `
 <hr>
 
 - проверить загрузку JAR
-- `kubectl exec -it nificl-0 -- ls -l` **/opt/nifi/nifi-current/lib/**
+- `kubectl exec -it nificl-0 -- ls -l /opt/nifi/nifi-current/lib/`
 <br>nifi-wrapper
 - `kubectl logs nificl-0 -n nifi | grep 🐺 `
 <br>init copy-config
@@ -81,6 +81,7 @@ kubectl delete job nifi-cert-generator -n nifi  `
 
 <hr>
 
+hardcoded
 - keystorePassword := "changeme"
 - truststorePassword := "changeme"
 - keyPassword := "changeme"
