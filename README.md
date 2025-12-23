@@ -15,6 +15,8 @@
 
 ### nifi.yaml
 - для запуска достаточно заменить **NIFI.DOMEN.RU, API.DOMEN.RU, KEYCLOAK.DOMEN.RU** на реальные, **clientSecret** из настроек ***keycloak*** и всё.
+- ⚠️ **ВАЖНО**: После первичной настройки установите `overWrite: false` в nifi.yaml, иначе при рестарте потеряете пользователей и policies!
+
 ### НОВОЕ в nifi.yaml - downloadFiles:
 - перечисленные файлы будут загружены в папку ***/opt/nifi/nifi-current/lib/***
 
@@ -23,24 +25,29 @@
 
 ### Создаём сертификаты
 
-
-- ` openssl s_client \  
-  -connect KEYCLOAK.DOMEN.RU:443 \  
-  -servername KEYCLOAK.DOMEN.RU \  
-  -showcerts \  
-  </dev/null 2>/dev/null \  
-  | sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' \  
-  | kubectl create secret generic keycloak-nifi-secret \  
-      --from-file=tls.crt=/dev/stdin \  
-      -n nifi `  
+```bash
+openssl s_client \
+  -connect KEYCLOAK.DOMEN.RU:443 \
+  -servername KEYCLOAK.DOMEN.RU \
+  -showcerts \
+  </dev/null 2>/dev/null \
+  | sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' \
+  | kubectl create secret generic keycloak-nifi-secret \
+      --from-file=tls.crt=/dev/stdin \
+      -n nifi
+```  
 
 - `kubectl apply -f nifi-tls-secret.yaml -n nifi`
 
-- `kubectl apply -f certificate-api.yaml -n nifi`
+```bash
+kubectl apply -f certificate-api.yaml -n nifi
+```
 
-- `kubectl apply -f nifi-cert-generator-job.yaml -n nifi && \  
-kubectl wait --for=condition=complete job/nifi-cert-generator -n nifi --timeout=300s && \  
-kubectl delete job nifi-cert-generator -n nifi  `
+```bash
+kubectl apply -f nifi-cert-generator-job.yaml -n nifi && \
+kubectl wait --for=condition=complete job/nifi-cert-generator -n nifi --timeout=300s && \
+kubectl delete job nifi-cert-generator -n nifi
+```
 
 - `kubectl get secret -n nifi`  
 
@@ -52,7 +59,7 @@ kubectl delete job nifi-cert-generator -n nifi  `
 - nificl-sa-cert                  kubernetes.io/tls   2      16s
 
 ### Запускаем оператор
-- `kubectl apply -f nifi-operator-deployment-v05.yaml`
+- `kubectl apply -f nifi-operator-deployment-v07.yaml`
 ### Запускаем NIFI
 - `kubectl apply -f nifi.yaml -n nifi`
 ### Отслеживаем деплой
@@ -61,7 +68,7 @@ kubectl delete job nifi-cert-generator -n nifi  `
 
 ## В браузере https://NIFI.DOMEN.RU
 - входим юзером которого создали в keycloak и поместили в группу nifi_admins
-- в UI **группе** nifi_clients назначаем police `view the user interface` (иначе пользователем из этой группы в UI не войдёте и зациклитесь на входе)
+- в UI **группе** nifi_clients назначаем policy `view the user interface` (иначе пользователем из этой группы в UI не войдёте и зациклитесь на входе)
 
 ### https://API.DOMEN.RU 
 - прокси, ретранслирует запросы к NIFI API. 
