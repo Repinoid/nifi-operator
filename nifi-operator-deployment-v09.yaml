@@ -728,7 +728,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: naeel/nifi-operator:v2.1.24
+        image: naeel/nifi-operator:v2.1.25
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
