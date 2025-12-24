@@ -59,7 +59,7 @@ kubectl delete job nifi-cert-generator -n nifi
 - nificl-sa-cert                  kubernetes.io/tls   2      16s
 
 ### Запускаем оператор
-- `kubectl apply -f nifi-operator-deployment-v08.yaml`
+- `kubectl apply -f nifi-operator-deployment-v09.yaml`
 ### Запускаем NIFI
 - `kubectl apply -f nifi.yaml -n nifi`
 ### Отслеживаем деплой
