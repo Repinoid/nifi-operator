@@ -1,0 +1,904 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: nificlusters.nifi.kube5s.ru
+spec:
+  group: nifi.kube5s.ru
+  names:
+    kind: NifiCluster
+    listKind: NifiClusterList
+    plural: nificlusters
+    singular: nificluster
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: Ready
+      type: string
+    - jsonPath: .status.readyNodes
+      name: Nodes
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              adminGateway:
+                properties:
+                  basicAuthSecret:
+                    description: |-
+                      Basic Auth credentials для защиты Admin Gateway (опционально)
+                      Если указан, оператор будет использовать эти credentials при обращении к Admin Gateway API
+                    type: string
+                  enabled:
+                    type: boolean
+                  image:
+                    type: string
+                  ingress:
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      className:
+                        type: string
+                      enabled:
+                        type: boolean
+                      host:
+                        type: string
+                      path:
+                        type: string
+                    type: object
+                  nifiServiceUrl:
+                    description: 'НОВЫЕ ПОЛЯ: параметры для конфигурации admin-gateway'
+                    type: string
+                  proxyHost:
+                    type: string
+                  resources:
+                    properties:
+                      limits:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                        type: object
+                      requests:
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
+                        type: object
+                    type: object
+                  serviceType:
+                    type: string
+                  tls:
+                    properties:
+                      certManager:
+                        properties:
+                          enabled:
+                            type: boolean
+                          issuer:
+                            type: string
+                        type: object
+                      secretName:
+                        type: string
+                    type: object
+                type: object
+              auth:
+                properties:
+                  adminGroup:
+                    type: string
+                  clientGroup:
+                    type: string
+                  oidc:
+                    properties:
+                      clientID:
+                        type: string
+                      clientSecret:
+                        type: string
+                      discoveryURL:
+                        type: string
+                      enabled:
+                        type: boolean
+                      keycloakCert:
+                        type: string
+                      realmName:
+                        type: string
+                    required:
+                    - clientID
+                    - clientSecret
+                    - discoveryURL
+                    - enabled
+                    - keycloakCert
+                    - realmName
+                    type: object
+                  tokenClaimName:
+                    type: string
+                required:
+                - adminGroup
+                - clientGroup
+                - oidc
+                - tokenClaimName
+                type: object
+              downloadFiles:
+                description: |-
+                  DownloadFiles - список URL-адресов для загрузки файлов (JAR библиотеки и т.д.)
+                  Файлы будут скачаны в init-контейнере и скопированы в /opt/nifi/nifi-current/lib
+                items:
+                  type: string
+                type: array
+              env:
+                properties:
+                  clusterIsNode:
+                    type: string
+                  logLevel:
+                    type: string
+                  remoteInputSecure:
+                    type: string
+                  remoteInputSocketPort:
+                    type: string
+                  securityNeedClientAuth:
+                    type: string
+                  trustHostHeader:
+                    type: string
+                  webHttpContextPath:
+                    type: string
+                  webHttpsHost:
+                    type: string
+                  webHttpsPort:
+                    type: string
+                  webProxyHost:
+                    type: string
+                  webProxyScheme:
+                    type: string
+                type: object
+              hostAliases:
+                description: |-
+                  HostAliases - список хостов и IP адресов, которые будут добавлены в /etc/hosts пода
+                  Используется для разрешения DNS имен в обход DNS сервера (например, для доступа к Registry через CluserIP с публичным hostname)
+                items:
+                  description: HostAlias defines a mapping between IP and hostnames,
+                    similar to Pod HostAlias
+                  properties:
+                    hostnames:
+                      description: Hostnames for the above IP address.
+                      items:
+                        type: string
+                      type: array
+                    ip:
+                      description: IP address of the host file entry.
+                      type: string
+                  required:
+                  - hostnames
+                  - ip
+                  type: object
+                type: array
+              image:
+                type: string
+              ingress:
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  className:
+                    type: string
+                  enabled:
+                    type: boolean
+                  host:
+                    type: string
+                  tls:
+                    items:
+                      properties:
+                        hosts:
+                          items:
+                            type: string
+                          type: array
+                        secretName:
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              init:
+                properties:
+                  initImage:
+                    type: string
+                  overWrite:
+                    type: boolean
+                type: object
+              properties:
+                additionalProperties:
+                  type: string
+                type: object
+              registryClients:
+                description: |-
+                  RegistryClients - список NiFi Registry серверов для version control
+                  Правила уникальности:
+                    - Name должен быть уникальным в пределах кластера
+                    - URL может повторяться для разных Name (например, для разных credentials)
+                    - При обнаружении дубликатов по Name, все экземпляры будут удалены
+                    - Оператор автоматически синхронизирует состояние с NiFi API
+                items:
+                  description: |-
+                    RegistryClientSpec определяет конфигурацию NiFi Registry Client
+                    Name используется как уникальный идентификатор клиента в NiFi
+                  properties:
+                    name:
+                      description: |-
+                        Name - уникальное имя Registry Client в пределах NiFi кластера
+                        Должно быть уникальным. При обнаружении дубликатов все экземпляры удаляются.
+                      maxLength: 255
+                      minLength: 1
+                      type: string
+                    ssl:
+                      description: |-
+                        SSL Configuration для автоматического создания SSL Context Service
+                        Если SSLContextServiceID пустой и SSL указан, будет создан новый SSL Context Service
+                      properties:
+                        keystoreFile:
+                          description: |-
+                            KeystoreFile - путь к keystore файлу внутри NiFi Pod (для client certificate)
+                            Пример: /opt/nifi/nifi-current/conf/keystore-client.p12
+                          type: string
+                        keystorePassword:
+                          description: KeystorePassword - пароль для keystore
+                          type: string
+                        keystoreType:
+                          default: PKCS12
+                          description: KeystoreType - тип keystore (PKCS12, JKS, BCFKS)
+                          type: string
+                        sslProtocol:
+                          default: TLS
+                          description: SSLProtocol - версия SSL/TLS протокола (TLS,
+                            TLSv1.2, TLSv1.3)
+                          type: string
+                        truststoreFile:
+                          description: TruststoreFile - путь к truststore файлу внутри
+                            NiFi Pod (для проверки server certificate)
+                          type: string
+                        truststorePassword:
+                          description: TruststorePassword - пароль для truststore
+                          type: string
+                        truststoreType:
+                          default: PKCS12
+                          description: TruststoreType - тип truststore (PKCS12, JKS,
+                            BCFKS)
+                          type: string
+                      type: object
+                    sslContextServiceId:
+                      description: |-
+                        SSLContextServiceID - ID существующего SSL Context Service для HTTPS соединения
+                        Если не указан И заданы SSL параметры, будет создан автоматически
+                      type: string
+                    url:
+                      description: |-
+                        URL - адрес NiFi Registry сервера
+                        Может быть одинаковым для разных Registry Clients (например, с разными credentials)
+                      pattern: ^https?://.*
+                      type: string
+                  required:
+                  - name
+                  - url
+                  type: object
+                type: array
+              replicaCount:
+                format: int32
+                type: integer
+              resources:
+                properties:
+                  limits:
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+                    type: object
+                  requests:
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+                    type: object
+                type: object
+              retention:
+                properties:
+                  deletePVCsOnDeletion:
+                    type: boolean
+                type: object
+              serviceAccount:
+                properties:
+                  cN:
+                    type: string
+                  secretName:
+                    type: string
+                type: object
+              storage:
+                properties:
+                  config:
+                    properties:
+                      size:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      storageClass:
+                        type: string
+                    type: object
+                  content:
+                    properties:
+                      size:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      storageClass:
+                        type: string
+                    type: object
+                  database:
+                    properties:
+                      size:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      storageClass:
+                        type: string
+                    type: object
+                  flowFile:
+                    properties:
+                      size:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      storageClass:
+                        type: string
+                    type: object
+                  logs:
+                    properties:
+                      size:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      storageClass:
+                        type: string
+                    type: object
+                  provenance:
+                    properties:
+                      size:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      storageClass:
+                        type: string
+                    type: object
+                type: object
+              tlsSecretName:
+                description: |-
+                  TLSSecretName - имя Kubernetes секрета с TLS сертификатом для NiFi сервера
+                  Используется для внутренних подключений (internal Service-to-Service)
+                  Если не указано, используется spec.ingress.tls[0].secretName (backward compatibility)
+                type: string
+              version:
+                type: string
+            type: object
+          status:
+            properties:
+              conditions:
+                items:
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              message:
+                type: string
+              observedGeneration:
+                description: |-
+                  ObservedGeneration отражает Generation ресурса, который был обработан оператором
+                  Используется для оптимизации reconcile loop
+                format: int64
+                type: integer
+              phase:
+                type: string
+              readyNodes:
+                format: int32
+                type: integer
+              totalNodes:
+                format: int32
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: oper
+    app.kubernetes.io/instance: controller-manager
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: serviceaccount
+    app.kubernetes.io/part-of: oper
+  name: oper-controller-manager
+  namespace: nifi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: oper
+    app.kubernetes.io/instance: leader-election-role
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: role
+    app.kubernetes.io/part-of: oper
+  name: oper-leader-election-role
+  namespace: nifi
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: oper-manager-role
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - pods
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - nifi.kube5s.ru
+  resources:
+  - nificlusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - nifi.kube5s.ru
+  resources:
+  - nificlusters/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - nifi.kube5s.ru
+  resources:
+  - nificlusters/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: oper
+    app.kubernetes.io/instance: metrics-reader
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/part-of: oper
+  name: oper-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: oper
+    app.kubernetes.io/instance: proxy-role
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/part-of: oper
+  name: oper-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: oper
+    app.kubernetes.io/instance: leader-election-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: rolebinding
+    app.kubernetes.io/part-of: oper
+  name: oper-leader-election-rolebinding
+  namespace: nifi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: oper-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: oper-controller-manager
+  namespace: nifi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: oper
+    app.kubernetes.io/instance: manager-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/part-of: oper
+  name: oper-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: oper-manager-role
+subjects:
+- kind: ServiceAccount
+  name: oper-controller-manager
+  namespace: nifi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: oper
+    app.kubernetes.io/instance: proxy-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/part-of: oper
+  name: oper-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: oper-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: oper-controller-manager
+  namespace: nifi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: oper
+    app.kubernetes.io/instance: controller-manager-metrics-service
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: service
+    app.kubernetes.io/part-of: oper
+    control-plane: controller-manager
+  name: oper-controller-manager-metrics-service
+  namespace: nifi
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: oper
+    app.kubernetes.io/instance: controller-manager
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: deployment
+    app.kubernetes.io/part-of: oper
+    control-plane: controller-manager
+  name: oper-controller-manager
+  namespace: nifi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+                - arm64
+                - ppc64le
+                - s390x
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                - linux
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      - args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        command:
+        - /manager
+        image: naeel/nifi-operator:v1.7.47
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: oper-controller-manager
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/component: metrics
+    app.kubernetes.io/created-by: oper
+    app.kubernetes.io/instance: controller-manager-metrics-monitor
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: servicemonitor
+    app.kubernetes.io/part-of: oper
+    control-plane: controller-manager
+  name: oper-controller-manager-metrics-monitor
+  namespace: nifi
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    path: /metrics
+    port: https
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
+  selector:
+    matchLabels:
+      control-plane: controller-manager
