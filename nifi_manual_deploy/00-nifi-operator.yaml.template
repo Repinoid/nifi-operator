@@ -3,9 +3,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-  name: nificlusters.nifi.kube5s.ru
+  name: nificlusters.nifi.${DOMAIN}
 spec:
-  group: nifi.kube5s.ru
+  group: nifi.${DOMAIN}
   names:
     kind: NifiCluster
     listKind: NifiClusterList
@@ -117,6 +117,11 @@ spec:
                   adminGroup:
                     type: string
                   clientGroup:
+                    type: string
+                  initialAdminUser:
+                    description: |-
+                      InitialAdminUser - имя пользователя из OIDC, который получит админские права при первом запуске
+                      Используется для preferred_username из Keycloak (например, "regiadmin")
                     type: string
                   oidc:
                     properties:
@@ -612,7 +617,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - nifi.kube5s.ru
+  - nifi.${DOMAIN}
   resources:
   - nificlusters
   verbs:
@@ -624,13 +629,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - nifi.kube5s.ru
+  - nifi.${DOMAIN}
   resources:
   - nificlusters/finalizers
   verbs:
   - update
 - apiGroups:
-  - nifi.kube5s.ru
+  - nifi.${DOMAIN}
   resources:
   - nificlusters/status
   verbs:
@@ -846,7 +851,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: naeel/nifi-operator:v1.7.47
+        image: naeel/nifi-operator:v1.7.52
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

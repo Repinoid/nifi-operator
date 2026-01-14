@@ -1,24 +1,11 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: registry
-    app.kubernetes.io/instance: system
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: namespace
-    app.kubernetes.io/part-of: registry
-    control-plane: controller-manager
-  name: registry-system
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  name: nifiregistries.nifi.kube5s.ru
+  name: nifiregistries.nifi.${DOMAIN}
 spec:
-  group: nifi.kube5s.ru
+  group: nifi.${DOMAIN}
   names:
     kind: NifiRegistry
     listKind: NifiRegistryList
@@ -196,7 +183,7 @@ spec:
                 properties:
                   initialAdminIdentity:
                     description: |-
-                      InitialAdminIdentity - DN или username первичного администратора (например, "CN=nifi.kube5s.ru")
+                      InitialAdminIdentity - DN или username первичного администратора (например, "CN=nifi.${DOMAIN}")
                       Если не указан, используется дефолтный (см. CRD description)
                     type: string
                   initialAdminUser:
@@ -226,7 +213,7 @@ spec:
                     type: string
                   nifiIdentity:
                     description: |-
-                      NifiIdentity - Identity сертификата NiFi Cluster для mTLS (например, "CN=nifi.kube5s.ru")
+                      NifiIdentity - Identity сертификата NiFi Cluster для mTLS (например, "CN=nifi.${DOMAIN}")
                       Используется для grant access cluster-to-registry
                     type: string
                   nifiNamespace:
@@ -477,8 +464,8 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: serviceaccount
     app.kubernetes.io/part-of: registry
-  name: registry-controller-manager
-  namespace: registry-system
+  name: oper-registry-controller-manager
+  namespace: registry
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -490,8 +477,8 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: role
     app.kubernetes.io/part-of: registry
-  name: registry-leader-election-role
-  namespace: registry-system
+  name: oper-registry-leader-election-role
+  namespace: registry
 rules:
 - apiGroups:
   - ""
@@ -528,7 +515,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: registry-manager-role
+  name: oper-registry-manager-role
 rules:
 - apiGroups:
   - ""
@@ -565,7 +552,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - nifi.kube5s.ru
+  - nifi.${DOMAIN}
   resources:
   - nifiregistries
   verbs:
@@ -577,13 +564,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - nifi.kube5s.ru
+  - nifi.${DOMAIN}
   resources:
   - nifiregistries/finalizers
   verbs:
   - update
 - apiGroups:
-  - nifi.kube5s.ru
+  - nifi.${DOMAIN}
   resources:
   - nifiregistries/status
   verbs:
@@ -601,7 +588,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/part-of: registry
-  name: registry-metrics-reader
+  name: oper-registry-metrics-reader
 rules:
 - nonResourceURLs:
   - /metrics
@@ -618,7 +605,7 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/part-of: registry
-  name: registry-proxy-role
+  name: oper-registry-proxy-role
 rules:
 - apiGroups:
   - authentication.k8s.io
@@ -643,16 +630,16 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: rolebinding
     app.kubernetes.io/part-of: registry
-  name: registry-leader-election-rolebinding
-  namespace: registry-system
+  name: oper-registry-leader-election-rolebinding
+  namespace: registry
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: registry-leader-election-role
+  name: oper-registry-leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: registry-controller-manager
-  namespace: registry-system
+  name: oper-registry-controller-manager
+  namespace: registry
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -664,15 +651,15 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrolebinding
     app.kubernetes.io/part-of: registry
-  name: registry-manager-rolebinding
+  name: oper-registry-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: registry-manager-role
+  name: oper-registry-manager-role
 subjects:
 - kind: ServiceAccount
-  name: registry-controller-manager
-  namespace: registry-system
+  name: oper-registry-controller-manager
+  namespace: registry
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -684,15 +671,15 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: clusterrolebinding
     app.kubernetes.io/part-of: registry
-  name: registry-proxy-rolebinding
+  name: oper-registry-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: registry-proxy-role
+  name: oper-registry-proxy-role
 subjects:
 - kind: ServiceAccount
-  name: registry-controller-manager
-  namespace: registry-system
+  name: oper-registry-controller-manager
+  namespace: registry
 ---
 apiVersion: v1
 kind: Service
@@ -705,8 +692,8 @@ metadata:
     app.kubernetes.io/name: service
     app.kubernetes.io/part-of: registry
     control-plane: controller-manager
-  name: registry-controller-manager-metrics-service
-  namespace: registry-system
+  name: oper-registry-controller-manager-metrics-service
+  namespace: registry
 spec:
   ports:
   - name: https
@@ -727,8 +714,8 @@ metadata:
     app.kubernetes.io/name: deployment
     app.kubernetes.io/part-of: registry
     control-plane: controller-manager
-  name: registry-controller-manager
-  namespace: registry-system
+  name: oper-registry-controller-manager
+  namespace: registry
 spec:
   replicas: 1
   selector:
@@ -787,7 +774,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: naeel/nifi-registry-operator:v0.0.8
+        image: naeel/nifi-registry-operator:v2.12.9
         livenessProbe:
           httpGet:
             path: /healthz
@@ -815,5 +802,5 @@ spec:
             - ALL
       securityContext:
         runAsNonRoot: true
-      serviceAccountName: registry-controller-manager
+      serviceAccountName: oper-registry-controller-manager
       terminationGracePeriodSeconds: 10

@@ -12,7 +12,7 @@ Keycloak -
 
 Создать namespace nifi & registry
 
-Далее - kubectl apply -f всего последовательно
+Далее - README.md в папках manual_deploy
 
 kubectl port-forward -n registry service/registry 18443:18443
 

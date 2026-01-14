@@ -2,7 +2,7 @@
 # Apache NiFi Cluster Custom Resource Definition (CRD)
 # ==============================================================================
 # Оператор: nifi-operator (github.com/repinoid/nifi-operator)
-# API Version: NIFI.DOMEN.RU/v1alpha1
+# API Version: nifi.${DOMAIN}/v1alpha1
 # Документация NiFi: https://nifi.apache.org/nifi-docs/administration-guide.html
 #
 # CHANGELOG:
@@ -10,7 +10,7 @@
 #               для конфигурации admin-gateway из CRD
 # ==============================================================================
 
-apiVersion: nifi.kube5s.ru/v1alpha1
+apiVersion: nifi.${DOMAIN}/v1alpha1
 kind: NifiCluster
 metadata:
   # ============================================================================
@@ -80,7 +80,7 @@ spec:
   #   - Требуется self-signed сертификат с SAN содержащим:
   #       * nificl.nifi.svc.cluster.local (Pod DNS)
   #       * *.nifi.svc.cluster.local (Headless Service DNS)
-  #       * NIFI.DOMEN.RU (внешний DNS для совместимости)
+  #       * nifi.${DOMAIN} (внешний DNS для совместимости)
   # 
   # РАЗДЕЛЕНИЕ СЕРТИФИКАТОВ:
   #   - tlsSecretName (этот параметр): self-signed для internal (с .cluster.local DNS)
@@ -103,7 +103,7 @@ spec:
   #       name: nifi-internal-ca-issuer
   #       kind: Issuer
   #     dnsNames:
-  #       - NIFI.DOMEN.RU
+  #       - nifi.${DOMAIN}
   #       - nificl.nifi.svc.cluster.local
   #       - "*.nifi.svc.cluster.local"
   # 
@@ -229,6 +229,26 @@ spec:
     # Свойство в nifi.properties: nifi.security.user.oidc.claim.groups
     tokenClaimName: "nifi_groups"
     
+    # --------------------------------------------------------------------------
+    # Initial Admin User (OIDC)
+    # --------------------------------------------------------------------------
+    # Имя пользователя из OIDC, который получит админские права при первом запуске NiFi
+    # Используется значение из claim 'preferred_username' Keycloak токена
+    # 
+    # НАЗНАЧЕНИЕ:
+    #   - При первом запуске NiFi создаёт начальные авторизации (authorizations.xml)
+    #   - Без этого параметра только operator client cert (CN=nifi-operator-client) будет иметь права
+    #   - OIDC пользователи не смогут управлять NiFi через UI
+    # 
+    # ТРЕБОВАНИЕ:
+    #   - Пользователь должен существовать в Keycloak realm
+    #   - Пользователь должен быть в группе указанной в adminGroup (nifi_admins)
+    # 
+    # ⚠️ ВАЖНО: Применяется ТОЛЬКО при первом запуске!
+    # После создания authorizations.xml изменение этого параметра НЕ даст эффекта.
+    # Для добавления новых админов используйте NiFi UI → Users menu
+    initialAdminUser: "regadmin"
+    
   # ============================================================================
   # HOST ALIASES: Переопределение DNS (Network patching)
   # ============================================================================
@@ -237,7 +257,7 @@ spec:
   hostAliases:
     - ip: "10.107.155.29" # ClusterIP сервиса Registry
       hostnames:
-        - "registry.kube5s.ru"
+        - "registry.${DOMAIN}"
 
   # ============================================================================
   # ENVIRONMNET VARIABLES: Конфигурация NiFi через переменные окружения
@@ -274,7 +294,7 @@ spec:
     # Свойство в nifi.properties: nifi.web.proxy.host
     # ВАЖНО: Должен соответствовать значению в spec.ingress.host
     # См. https://nifi.apache.org/nifi-docs/administration-guide.html#proxy-configuration
-    webProxyHost: "NIFI.DOMEN.RU:443" # ***
+    webProxyHost: "nifi.${DOMAIN}:443" # ***
     
     # --------------------------------------------------------------------------
     # Logging Configuration
@@ -744,10 +764,11 @@ spec:
   # 
   # Реализация: Python Flask приложение с requests + client certificates
   # Код: admin-gateway/ директория
+  adminGateway:
+    # Включить/выключить Admin Gateway
     # false = API доступен только напрямую через NiFi Service (требует client cert)
     # true = API доступен через proxy (без client cert на стороне клиента)
-  adminGateway:
-    enabled: false
+    enabled: true
     
     # Тип Kubernetes Service для Admin Gateway
     # Опции:
@@ -784,7 +805,7 @@ spec:
     # 
     # Формат: <hostname>:<port>
     # Если стандартный HTTPS порт 443, порт можно опустить: <hostname>
-    proxyHost: "NIFI.DOMEN.RU:443" # *** ИСПРАВЛЕНО: используем порт 443 (Ingress)
+    proxyHost: "nifi.${DOMAIN}:443" # *** ИСПРАВЛЕНО: используем порт 443 (Ingress)
     
     # --------------------------------------------------------------------------
     # TLS Configuration: Сертификаты для Admin Gateway
@@ -825,7 +846,7 @@ spec:
       # ВАЖНО: 
       #   - DNS должен указывать на Ingress Controller
       #   - Отличается от основного NiFi UI host (разделение concerns)
-      host: "api2.kube5s.ru" # ***
+      host: "api2.${DOMAIN}" # ***
       
       # Ingress Class для routing
       # Определяет какой Ingress Controller обработает этот Ingress
@@ -925,21 +946,21 @@ spec:
   # ПРИМЕРЫ КОНФИГУРАЦИЙ:
   #   ✅ Правильно - разные name, разные url:
   #      - name: "Production Registry"
-  #        url: "https://registry.kube5s.ru/nifi-registry"
+  #        url: "https://registry.${DOMAIN}/nifi-registry"
   #      - name: "Dev Registry"
-  #        url: "https://registry-dev.kube5s.ru/nifi-registry"
+  #        url: "https://registry-dev.${DOMAIN}/nifi-registry"
   #
   #   ✅ Правильно - разные name, одинаковый url (разные credentials):
   #      - name: "Registry Read-Only"
-  #        url: "https://registry.kube5s.ru/nifi-registry"
+  #        url: "https://registry.${DOMAIN}/nifi-registry"
   #      - name: "Registry Admin"
-  #        url: "https://registry.kube5s.ru/nifi-registry"
+  #        url: "https://registry.${DOMAIN}/nifi-registry"
   #
   #   ❌ Неправильно - дубликат name (будут удалены ОБА):
   #      - name: "Production Registry"
-  #        url: "https://registry.kube5s.ru/nifi-registry"
+  #        url: "https://registry.${DOMAIN}/nifi-registry"
   #      - name: "Production Registry"  # <-- дубликат!
-  #        url: "https://registry2.kube5s.ru/nifi-registry"
+  #        url: "https://registry2.${DOMAIN}/nifi-registry"
   #
   # ОБРАБОТКА ОШИБОК:
   #   - Если Registry недоступен: оператор создаст Event и повторит через 30 сек
@@ -948,7 +969,7 @@ spec:
   #   - Логи оператора: kubectl logs -n nifi-operator-system <operator-pod>
   #
   # ПРОВЕРКА СТАТУСА:
-  #   curl -sk "https://api.kube5s.ru/nifi-api/controller/registry-clients" | jq '.registries[] | {name: .component.name, url: .component.properties.url}'
+  #   curl -sk "https://api.${DOMAIN}/nifi-api/controller/registry-clients" | jq '.registries[] | {name: .component.name, url: .component.properties.url}'
   registryClients: 
     - name: "Naeel Dev0 Registry"
       url: "https://registry.registry.svc.cluster.local:18443"
@@ -965,7 +986,7 @@ spec:
         truststoreType: "JKS"
         sslProtocol: "TLS"
     # - name: "Production Registry1"
-    #   url: "https://registry.kube5s.ru/nifi-registry"
+    #   url: "https://registry.${DOMAIN}/nifi-registry"
   
   # ============================================================================
   # INGRESS: Внешний доступ к NiFi UI
@@ -991,7 +1012,7 @@ spec:
     className: "nginx"
     
     # Hostname для доступа к NiFi UI
-    # Пользователи будут открывать: https://NIFI.DOMEN.RU/nifi/
+    # Пользователи будут открывать: https://nifi.${DOMAIN}/nifi/
     # 
     # ТРЕБОВАНИЯ:
     #   - DNS запись указывает на IP Ingress Controller
@@ -1000,7 +1021,7 @@ spec:
     # 
     # ВАЖНО: NiFi проверяет Host header (nifi.web.proxy.host в nifi.properties)
     # Несоответствие = HTTP 421 Misdirected Request
-    host: "NIFI.DOMEN.RU" # ***
+    host: "nifi.${DOMAIN}" # ***
     
     # --------------------------------------------------------------------------
     # Annotations: Настройки для Ingress Controller
@@ -1013,10 +1034,6 @@ spec:
       # Без этой аннотации: Ingress → HTTP → NiFi (ошибка)
       # С этой аннотацией: Ingress → HTTPS → NiFi (правильно)
       nginx.ingress.kubernetes.io/backend-protocol: HTTPS
-
-      # UPDATED: REMOVED explicit proxy-ssl-name.
-      # The Operator automatically sets proxy-ssl-name to match the Spec.Host (external domain).
-      # nginx.ingress.kubernetes.io/proxy-ssl-name: NIFI.INTERNAL.SVC
       
       # Максимальный размер тела запроса (upload size)
       # По умолчанию nginx ограничивает: 1m
@@ -1062,10 +1079,10 @@ spec:
           # Должен совпадать с spec.ingress.host
           # 
           # Можно добавить несколько hosts если сертификат SAN/wildcard:
-          #   - NIFI.DOMEN.RU
-          #   - www.NIFI.DOMEN.RU
-          #   - *.kube5s.ru (wildcard)
-          - NIFI.DOMEN.RU # ***
+          #   - nifi.${DOMAIN}
+          #   - www.nifi.${DOMAIN}
+          #   - *.${DOMAIN} (wildcard)
+          - nifi.${DOMAIN} # ***
         
         # Имя Kubernetes Secret с TLS сертификатом
         # 
@@ -1085,12 +1102,12 @@ spec:
         #     issuerRef:
         #       name: letsencrypt-prod
         #     dnsNames:
-        #       - NIFI.DOMEN.RU
+        #       - nifi.${DOMAIN}
         # 
         # РУЧНАЯ ГЕНЕРАЦИЯ:
         #   openssl req -x509 -newkey rsa:2048 -nodes \
         #     -keyout tls.key -out tls.crt -days 365 \
-        #     -subj "/CN=NIFI.DOMEN.RU"
+        #     -subj "/CN=nifi.${DOMAIN}"
         #   kubectl create secret tls nifi-tls-secret \
         #     --cert=tls.crt --key=tls.key -n nifi
         # 
@@ -1098,27 +1115,9 @@ spec:
         # Сертификат должен быть валиден для:
         #   - Браузеров пользователей (CA-signed для production)
         #   - Срок действия должен быть актуален
-        #   - CN или SAN должен содержать spec.ingress.host (NIFI.DOMEN.RU)
+        #   - CN или SAN должен содержать spec.ingress.host (nifi.${DOMAIN})
         # 
         # РАЗДЕЛЕНИЕ СЕРТИФИКАТОВ:
         #   - Этот secretName: Let's Encrypt для Ingress/браузеров (без .cluster.local)
         #   - spec.tlsSecretName: self-signed для NiFi сервера (с .cluster.local DNS)
         secretName: nifi-tls-secret
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: nifi-jmx-exporter-config
-  namespace: nifi
-data:
-  config.yaml: |
-    hostPort: 127.0.0.1:9010
-    startDelaySeconds: 0
-    ssl: false
-    lowercaseOutputName: true
-    lowercaseOutputLabelNames: true
-    rules:
-    - pattern: 'org.apache.nifi<name=(.*)><>(.*):'
-      name: nifi_$1_$2
-      type: GAUGE

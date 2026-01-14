@@ -49,7 +49,7 @@ spec:
   commonName: nificl.nifi.svc.cluster.local
   dnsNames:
     # Внешний домен для корректной работы SNI в NiFi 2.0+ (Jetty 12)
-    - trinoid.k8c.ru
+    - nifi.kube5s.ru
     # Внутренние Kubernetes DNS имена
     - nificl.nifi.svc.cluster.local
     - nificl.nifi.svc

@@ -9,6 +9,6 @@ spec:
     # IMPORTANT: Assuming 'letsencrypt-prod' ClusterIssuer exists!
     name: letsencrypt-prod
     kind: ClusterIssuer
-  commonName: trinoid.k8c.ru
+  commonName: nifi.kube5s.ru
   dnsNames:
-  - trinoid.k8c.ru
+  - nifi.kube5s.ru

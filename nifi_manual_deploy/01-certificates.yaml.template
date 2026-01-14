@@ -1,0 +1,75 @@
+# Self-signed CA Issuer for internal NiFi certificates
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: nifi-internal-ca-issuer
+  namespace: nifi
+spec:
+  selfSigned: {}
+---
+# CA Certificate for NiFi mTLS
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nifi-mtls-ca
+  namespace: nifi
+spec:
+  secretName: nifi-mtls-ca-secret-v2
+  issuerRef:
+    name: nifi-internal-ca-issuer
+    kind: Issuer
+  commonName: "NiFi-mTLS-CA"
+  isCA: true
+  duration: 87600h  # 10 years
+  renewBefore: 720h # 30 days
+---
+# CA Issuer for signing NiFi certificates
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: nifi-mtls-ca-issuer
+  namespace: nifi
+spec:
+  ca:
+    secretName: nifi-mtls-ca-secret-v2
+---
+# NiFi Internal TLS Certificate (for internal cluster communication)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nifi-internal-tls-cert
+  namespace: nifi
+spec:
+  secretName: nifi-internal-tls-secret
+  issuerRef:
+    name: nifi-mtls-ca-issuer
+    kind: Issuer
+  commonName: "nificl.nifi.svc.cluster.local"
+  dnsNames:
+    - "nifi.${DOMAIN}"
+    - "nificl.nifi.svc.cluster.local"
+    - "*.nifi.svc.cluster.local"
+  duration: 8760h   # 1 year
+  renewBefore: 720h # 30 days
+  usages:
+    - server auth
+    - client auth
+---
+# NiFi Registry Client Certificate (for Registry mTLS)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nifi-registry-client-cert
+  namespace: nifi
+spec:
+  secretName: nifi-registry-client-cert
+  issuerRef:
+    name: nifi-mtls-ca-issuer
+    kind: Issuer
+  commonName: "nifi.${DOMAIN}"
+  dnsNames:
+    - "nifi.${DOMAIN}"
+  duration: 8760h   # 1 year
+  renewBefore: 720h # 30 days
+  usages:
+    - client auth
