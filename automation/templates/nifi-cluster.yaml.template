@@ -1,0 +1,195 @@
+# Apache NiFi Cluster (Custom Resource)
+# Operator: nifi-operator
+# API Version: nifi.kube5s.ru/v1alpha1
+
+apiVersion: nifi.kube5s.ru/v1alpha1
+kind: NifiCluster
+metadata:
+  name: nificl
+  namespace: nifi
+
+spec:
+  replicaCount: 1
+  image: "${NIFI_IMAGE}"
+
+  downloadFiles:
+    - https://jdbc.postgresql.org/download/postgresql-42.7.8.jar
+
+  tlsSecretName: nifi-internal-tls-secret
+
+  auth:
+    oidc:
+      enabled: true
+      realmName: "${KEYCLOAK_REALM}"
+      discoveryURL: "${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/.well-known/openid-configuration"
+      clientID: "${NIFI_OIDC_CLIENT_ID}"
+      clientSecret: "${NIFI_OIDC_CLIENT_SECRET}"
+      keycloakCert: "keycloak-nifi-secret"
+
+    # --- СТАТИЧЕСКАЯ ИНИЦИАЛИЗАЦИЯ (Используется NiFi БЕЗ участия оператора при САМОМ ПЕРВОМ старте) ---
+    # Эти параметры попадают в authorizers.xml и users.xml.
+    # Если на PVC уже есть файлы конфигов, NiFi ИГНОРИРУЕТ эти параметры.
+    adminGroup: "nifi_admins" 
+    clientGroup: "nifi_clients"
+    tokenClaimName: "nifi_groups"
+    initialAdminUser: "${INITIAL_ADMIN}" # preferred_username из Keycloak. Должен быть в группе admins.
+
+    # --- ДИНАМИЧЕСКАЯ СИНХРОНИЗАЦИЯ (Выполняется ОПЕРАТОРОМ через REST API постоянно) ---
+    # Оператор берет актуальный состав групп из Keycloak и обновляет NiFi.
+    sync:
+      enabled: true
+      intervalSeconds: 300
+      clientID: "${SYNC_CLIENT_ID}"
+      clientSecret: "${SYNC_CLIENT_SECRET}"
+
+      # 🚀 Активация синхронизации Registry (Новая фича)
+      # Синхронизация полей Users/Groups и Политик выполняется параллельно в Registry
+      registry:
+        enabled: true
+        url: "https://registry.registry.svc.cluster.local:18443" # Внутренний Service Registry
+        insecureSkipVerify: true # Для self-signed сертификатов
+
+      groups:
+        # ВАЖНО: Первая группа в списке ДОЛЖНА быть админской
+        - name: "nifi_admins"
+          nifiPolicies:
+            - resource: "/flow"
+              actions: ["read"]
+            - resource: "/controller"
+              actions: ["read", "write"]
+            - resource: "/parameter-contexts"
+              actions: ["read", "write"]
+            - resource: "/provenance"
+              actions: ["read"]
+            - resource: "/restricted-components"
+              actions: ["read", "write"]
+            - resource: "/tenants"
+              actions: ["read", "write"]
+            - resource: "/policies"
+              actions: ["read", "write"]
+            - resource: "/proxy"
+              actions: ["write"]
+            - resource: "/system"
+              actions: ["read"]
+            - resource: "/counters"
+              actions: ["read", "write"]
+            - resource: "/data-transfer"
+              actions: ["write"]
+            - resource: "/process-groups/root"
+              actions: ["read", "write"]
+          registryPolicies:
+            - resource: "/policies"
+              actions: ["read", "write"]
+            - resource: "/buckets"
+              actions: ["read", "write"]
+
+        # Юзерская группа: могут работать, но не могут менять права (себе или другим)
+        - name: "nifi_clients"
+          nifiPolicies:
+            - resource: "/flow"
+              actions: ["read"]
+            - resource: "/process-groups/root"
+              actions: ["read", "write"]
+          registryPolicies:
+            - resource: "/buckets"
+              actions: ["read"]
+
+        - name: "test-sync-group"
+          nifiPolicies:
+            - resource: "/system"
+              actions: ["read"]
+            - resource: "/tenants"
+              actions: ["read"]
+          registryPolicies:
+            - resource: "/buckets"
+              actions: ["read"]
+            - resource: "/policies"
+              actions: ["read"]
+
+  hostAliases:
+    - ip: "10.107.155.29" # ClusterIP для Registry
+      hostnames:
+        - "${REGISTRY_DOMAIN}"
+
+  env:
+    webHttpsHost: "0.0.0.0"
+    webHttpsPort: "8443"
+    webProxyHost: "${NIFI_DOMAIN}:443"
+    logLevel: "DEBUG"
+    securityNeedClientAuth: "false"
+    clusterIsNode: "false"
+    remoteInputSecure: "true"
+    remoteInputSocketPort: "10443"
+    webProxyScheme: "https"
+    webHttpContextPath: "/nifi"
+  
+  storage:
+    config: { size: "333Mi", storageClass: "local-path" }
+    flowFile: { size: "300Mi", storageClass: "local-path" }
+    content: { size: "300Mi", storageClass: "local-path" }
+    provenance: { size: "300Mi", storageClass: "local-path" }
+    database: { size: "300Mi", storageClass: "local-path" }
+    logs: { size: "300Mi", storageClass: "local-path" }
+  
+  # ============================================================================
+  # INIT CONTAINER: Настройка перед запуском NiFi
+  # ============================================================================
+  # Init-контейнер выполняет подготовительные задачи:
+  #   - Копирование и настройка конфигурационных файлов
+  #   - Генерация nifi.properties из шаблонов
+  #   - Импорт сертификатов в KeyStore/TrustStore
+  #   - Настройка authorizers.xml, login-identity-providers.xml
+  #   - Создание структуры директорий
+  # 
+  # Реализация: setupNifiProperties/cmd/nifi-setup/setup-nifi.go
+  init:
+    # ОПАСНО! Перезаписывать существующие конфигурационные файлы
+    # 
+    # true  = При каждом запуске Pod перезаписывает конфиги дефолтными значениями
+    #         ПОТЕРЯ всех изменений сделанных через UI:
+    #           - Новые пользователи и группы (users.xml)
+    #           - Новые policies (authorizations.xml)
+    #           - Ручные правки nifi.properties
+    # 
+    # false = Конфиги создаются только если не существуют
+    #         Сохраняются изменения между рестартами
+    # 
+    # ИСПОЛЬЗОВАНИЕ:
+    #   - true:  Только для отладки и development
+    #   - false: ВСЕГДА в production и после первичной настройки
+    # 
+    # ВНИМАНИЕ: Включение этой опции после настройки NiFi = потеря всех данных конфигурации!
+    overWrite: false
+  
+  resources:
+    requests: { cpu: "1000m", memory: "2Gi" }
+    limits: { cpu: "2000m", memory: "4Gi" }
+
+  serviceAccount:
+    secretName: "nificl-sa-cert"
+    cN: "nifi-operator-client"    
+  
+  registryClients: 
+    - name: "Naeel Dev0 Registry"
+      url: "https://registry.registry.svc.cluster.local:18443"
+      ssl:
+        keystoreFile: "/opt/nifi/nifi-current/conf/registry-client-keystore.p12"
+        keystorePassword: "parole"
+        keystoreType: "PKCS12"
+        truststoreFile: "/opt/nifi/nifi-current/conf/truststore-custom.jks"
+        truststorePassword: "parole"
+        truststoreType: "JKS"
+        sslProtocol: "TLS"
+
+  ingress:
+    enabled: true
+    className: "nginx"
+    host: "${NIFI_DOMAIN}"
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+      nginx.ingress.kubernetes.io/proxy-body-size: 110m
+      nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    tls:
+      - hosts: [ "${NIFI_DOMAIN}" ]
+        secretName: nifi-tls-secret

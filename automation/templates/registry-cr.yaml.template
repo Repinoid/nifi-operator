@@ -1,0 +1,139 @@
+apiVersion: nifi.kube5s.ru/v1alpha1
+kind: NifiRegistry
+metadata:
+  name: registry
+  namespace: registry
+spec:
+  # ==============================================================================
+  # === 3. Переменные в CRD (Variables explicitly in CRD) ===
+  # ==============================================================================
+  
+  # Docker image NiFi Registry
+  image: "${REGISTRY_IMAGE}"
+  
+  # Replica count
+  replicaCount: 1
+
+  # Container images (optional components)
+  # images:
+  #   postgres: "postgres:15-alpine"
+  #   jre: "eclipse-temurin:11-jre-alpine"
+  #   alpine: "alpine:3.18"
+
+  # Resources for Registry container
+  # resources:
+  #   limits:
+  #     cpu: "2"
+  #     memory: "4Gi"
+  #   requests:
+  #     cpu: "1"
+  #     memory: "2Gi"
+
+  # Security Context (Optional) - если не задан, используются defaults
+  # securityContext:
+  #   runAsUser: 1000
+  #   runAsGroup: 1000
+  #   fsGroup: 1000
+
+  # TLS/mTLS Security configuration
+  security:
+    # Идентичности для авторизации и сертификатов (КРИТИЧНО ВАЖНО)
+    initialAdminIdentity: "${INITIAL_ADMIN}"    # Identity админа (обычно совпадает с nifiIdentity для упрощения)
+    nifiIdentity: "CN=${NIFI_DOMAIN}"            # Identity кластера NiFi (должен совпадать с сертификатом NiFi Nodes)
+    nifiControllerIdentity: "CN=nifi-operator-client" # Identity оператора (должен совпадать with client cert Secret)
+    
+    # Локальный админ (не OIDC), который будет прописан в users.xml
+    # Нужен для отладки или если OIDC недоступен
+    initialAdminUser: "${INITIAL_ADMIN}"
+
+    # === 2. Условный хардкод / Defaults (Changeable if needed, but defaults work) ===
+    # nifiNamespace: "nifi"        # Namespace где живет NiFi (откуда копировать CA). Default: "nifi"
+    needClientAuth: false          # ВНИМАНИЕ!!! НЕ МЕНЯТЬ НА TRUE! ЭТО ЛОМАЕТ INGRESS (502 ERROR). ОСТАВИТЬ FALSE!!! 
+    # keystorePassword: "parole"   # Default: parole
+    # truststorePassword: "parole" # Default: parole
+    # keyPassword: "parole"        # Default: parole
+
+
+  # Web server configuration
+  web:
+    httpsHost: "0.0.0.0"
+    httpsPort: 18443
+    proxyHost: "${REGISTRY_DOMAIN}"
+    proxyPort: 443
+    proxyScheme: "https"
+  
+  # Logging
+  logLevel: "DEBUG"
+  
+  # Database configuration (PostgreSQL)
+  database:
+    enabled: true
+    deployPostgres: true
+    password: "registrypass"
+  
+  # PVC Configuration
+  storage:
+    config:
+      size: "250Mi"
+    database:
+      size: "277Mi"
+  
+  # Files to download to shared-lib
+  downloadFiles:
+    - url: "https://jdbc.postgresql.org/download/postgresql-42.7.1.jar"
+      destination: "/opt/shared-lib/postgresql-42.7.1.jar"
+
+
+  # OIDC Configuration (Keycloak)
+  oidc:
+    enabled: true
+    discoveryURL: "${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/.well-known/openid-configuration"
+    clientID: "${REGISTRY_OIDC_CLIENT_ID}"
+    clientSecret: "${REGISTRY_OIDC_CLIENT_SECRET}"
+    adminGroup: "nifi_admins" # Users in this group get full admin rights
+    claimGroups: "nifi_groups" # Claim name in ID Token containing groups/roles
+
+    # === 2. Условный хардкод / Defaults ===
+    # adminIdentity: ""  # Если задан, переопределяет InitialAdminIdentity logic
+    
+    # URL для логаута (жестко задаем правильный адрес для localhost, чтобы избежать проблем с редиректами)
+    logoutURL: "${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/logout?post_logout_redirect_uri=https://localhost:18443/nifi-registry/"
+
+# ==============================================================================
+# === 1. Хардкод (Hardcoded variables in Operator Logic) =======================
+# Эти значения жестко зашиты в коде оператора и не могут быть изменены через CRD.
+# ==============================================================================
+#
+# FILE: controllers/registry_statefulset.go
+# - Mount Paths:
+#   - /opt/nifi-registry-config (Config Map volume)
+#   - /opt/shared-lib (Shared libraries volume)
+#   - /opt/nifi-registry/nifi-registry-current/conf (Registry config volume)
+# - Ports:
+#   - 18080 (HTTP Container Port - fixed)
+#   - 18443 (HTTPS Container Port - fixed but mapped via Service)
+#
+# FILE: controllers/registry_config_templates.go
+# - OIDC Scopes (Default): "offline_access" is always appended if not present
+# - OIDC JWS Algorithm: "RS256" (fixed)
+# - OIDC Connect/Read Timeout: "5 secs" (fixed)
+# - Database Driver: "org.postgresql.Driver" (for PostgreSQL) or "org.h2.Driver" (for H2)
+# - Database Connection internal host: "{registry-name}-postgres"
+# - Database Port internal: 5432
+#
+# ==============================================================================
+#
+# FILE: controllers/registry_defaults.go
+# - Default Image Tags (can be overridden in spec.images):
+#   - Postgres (default: postgres:15-alpine)
+#   - JRE (default: eclipse-temurin:11-jre-alpine)
+#   - Alpine (default: alpine:3.18)
+
+# ==============================================================================
+# ВНИМАНИЕ: Используется PostgreSQL, который разворачивается оператором 
+# рядом с Registry (как отдельный контейнер/StatefulSet). Это НЕ H2.
+#
+# На данный момент подключение внешней БД (External Postgres) не поддерживается 
+# кодом оператора (имя БД 'nifireg' и хост жестко зашиты).
+# Для подключения внешней базы обращайтесь к разработчику.
+# ==============================================================================

@@ -1,0 +1,96 @@
+# 1. Root Self-Signed Issuer (Used once to bootstrap CA)
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: nifi-internal-selfsigned
+  namespace: nifi
+spec:
+  selfSigned: {}
+---
+# 2. CA Certificate (MTLS Root for the entire project)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nifi-mtls-ca
+  namespace: nifi
+spec:
+  secretName: nifi-mtls-ca-secret-v2
+  issuerRef:
+    name: nifi-internal-selfsigned
+    kind: Issuer
+  commonName: "NiFi-mTLS-CA"
+  isCA: true
+  duration: 87600h  # 10 years
+  renewBefore: 720h # 30 days
+---
+# 3. CA Issuer (Signs all internal certificates)
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: nifi-mtls-ca-issuer
+  namespace: nifi
+spec:
+  ca:
+    secretName: nifi-mtls-ca-secret-v2
+---
+# 4. Operator Client Certificate (CN=nifi-operator-client)
+# Critical: CN must match what's in authorizers.xml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nificl-sa-cert
+  namespace: nifi
+spec:
+  secretName: nificl-sa-cert
+  issuerRef:
+    name: nifi-mtls-ca-issuer
+    kind: Issuer
+  commonName: "nifi-operator-client"
+  duration: 8760h   # 1 year
+  renewBefore: 720h # 30 days
+  usages:
+    - client auth
+  privateKey:
+    algorithm: RSA
+    size: 2048
+---
+# 5. NiFi Internal TLS Certificate (Node-to-Node & HTTP Internal)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nifi-internal-tls-cert
+  namespace: nifi
+spec:
+  secretName: nifi-internal-tls-secret
+  issuerRef:
+    name: nifi-mtls-ca-issuer
+    kind: Issuer
+  commonName: "nificl.nifi.svc.cluster.local"
+  dnsNames:
+    - "${NIFI_DOMAIN}"
+    - "nificl.nifi.svc.cluster.local"
+    - "*.nifi.svc.cluster.local"
+  duration: 8760h   # 1 year
+  renewBefore: 720h # 30 days
+  usages:
+    - server auth
+    - client auth
+---
+# 6. NiFi Registry Client Certificate (NiFi -> Registry mTLS)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nifi-registry-client-cert
+  namespace: nifi
+spec:
+  secretName: nifi-registry-client-cert
+  issuerRef:
+    name: nifi-mtls-ca-issuer
+    kind: Issuer
+  commonName: "${NIFI_DOMAIN}"
+  dnsNames:
+    - "${NIFI_DOMAIN}"
+  duration: 8760h   # 1 year
+  renewBefore: 720h # 30 days
+  usages:
+    - client auth
