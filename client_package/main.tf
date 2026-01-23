@@ -2,7 +2,7 @@ terraform {
   required_providers {
     nubes = {
       # Сюда мы прописываем ВАШ приватный регистри
-      source  = "terrareg.kube5s.ru/nubes/nubes"
+      source  = "terra.k8c.ru/nubes/nubes"
       version = "1.0.0"
     }
   }
