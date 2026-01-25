@@ -1,20 +1,19 @@
-resource "nubes_tubulus_instance" "example_instance" {
+resource "nubes_tubulus_instance" "example_instance33" {
   # Имя экземпляра (Обязательно)
-  display_name = "Bolvanka Full Test"
+  display_name = "Bolvanka00"
 
   # Описание (Опционально)
-  description = "Testing all parameters transmission via Terraform"
+  description = "Testing Terraform Plan output"
 
   # Дополнительные параметры
-  resource_realm   = "dummy" # Платформа (dummy)
-  duration_ms      = 2000    # Время выполнения операции в мс
-  fail_at_start    = false   # Упасть сразу при старте
-  fail_in_progress = false   # Упасть в процессе выполнения
-  where_fail       = 1       # Этап падения (1=prepare, 2=data_fill, 3=after_vault)
+  # resource_realm   = "dummy"
+  # duration_ms      = 5000 
+  # fail_at_start    = true  
+  # fail_in_progress = false 
+  # where_fail       = 1     
 
-  # Расширенные данные
-  body_message = "Hello from Terraform Client Package"
-  map_example  = "{\"env\": \"production\", \"tier\": \"backend\"}"
-  json_example = "{\"config_id\": 12345, \"active\": true}"
-  # yaml_example    = "" 
+  # AI Инструкция
+  instruction = "создай машину которая работает 5 секунд и падает при старте"
+
+
 }

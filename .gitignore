@@ -1,0 +1,2 @@
+# Ignore local terraform variable files containing secrets
+client_package/terraform.tfvars
