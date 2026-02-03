@@ -1,0 +1,568 @@
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"go/format"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"text/template"
+
+	"gopkg.in/yaml.v3"
+)
+
+type Param struct {
+	ID       int    `yaml:"id"`
+	Code     string `yaml:"code"`
+	Type     string `yaml:"type"`
+	Required bool   `yaml:"required"`
+	Default  string `yaml:"default"`
+}
+
+type ServiceYAML struct {
+	Name      string `yaml:"name"`
+	ServiceID int    `yaml:"service_id"`
+	Create    struct {
+		Params []Param `yaml:"params"`
+	} `yaml:"create"`
+	Modify struct {
+		Params []Param `yaml:"params"`
+	} `yaml:"modify"`
+	Lifecycle struct {
+		DeleteModeDefault     string `yaml:"delete_mode_default"`
+		ResumeIfExistsDefault bool   `yaml:"resume_if_exists_default"`
+	} `yaml:"lifecycle"`
+}
+
+type GenResource struct {
+	Name              string
+	ServiceID         int
+	CreateParams      []Param
+	CreateFixedParams []FixedParam
+	ModifyParams      []Param
+	DeleteMode        string
+	ResumeIfExists    bool
+
+	UsesBool           bool
+	UsesInt64          bool
+	UsesString         bool
+	HasDefaults        bool
+	NeedsBoolDefault   bool
+	NeedsInt64Default  bool
+	NeedsStringDefault bool
+}
+
+func main() {
+	root, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	resourcesDir := filepath.Join(root, "resources_yaml")
+	outDir := filepath.Join(root, "internal", "resources_gen")
+
+	services, err := loadServices(resourcesDir)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, svc := range services {
+		if err := writeResource(outDir, svc); err != nil {
+			panic(err)
+		}
+	}
+	if err := writeRegistry(outDir, services); err != nil {
+		panic(err)
+	}
+}
+
+func loadServices(dir string) ([]GenResource, error) {
+	var services []GenResource
+	walkErr := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() || !strings.HasSuffix(d.Name(), ".yaml") {
+			return nil
+		}
+
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		var svc ServiceYAML
+		if err := yaml.Unmarshal(b, &svc); err != nil {
+			return err
+		}
+
+		createParams, createFixed := splitCreateParams(svc.Name, svc.Create.Params)
+		gr := GenResource{
+			Name:              svc.Name,
+			ServiceID:         svc.ServiceID,
+			CreateParams:      createParams,
+			CreateFixedParams: createFixed,
+			ModifyParams:      svc.Modify.Params,
+			DeleteMode:        svc.Lifecycle.DeleteModeDefault,
+			ResumeIfExists:    svc.Lifecycle.ResumeIfExistsDefault,
+		}
+
+		analyzeParams := func(p Param) {
+			switch strings.ToLower(p.Type) {
+			case "bool":
+				gr.UsesBool = true
+				if p.Default != "" && !p.Required {
+					gr.NeedsBoolDefault = true
+					gr.HasDefaults = true
+				}
+			case "int", "int64", "number":
+				gr.UsesInt64 = true
+				if p.Default != "" && !p.Required {
+					gr.NeedsInt64Default = true
+					gr.HasDefaults = true
+				}
+			default:
+				gr.UsesString = true
+				if p.Default != "" && !p.Required {
+					gr.NeedsStringDefault = true
+					gr.HasDefaults = true
+				}
+			}
+		}
+		for _, p := range gr.CreateParams {
+			analyzeParams(p)
+		}
+		for _, p := range gr.ModifyParams {
+			analyzeParams(p)
+		}
+
+		// Schema defaults apply only to create params
+		gr.NeedsBoolDefault = false
+		gr.NeedsInt64Default = false
+		gr.NeedsStringDefault = false
+		for _, p := range gr.CreateParams {
+			if p.Default == "" || p.Required {
+				continue
+			}
+			switch strings.ToLower(p.Type) {
+			case "bool":
+				gr.NeedsBoolDefault = true
+			case "int", "int64", "number":
+				gr.NeedsInt64Default = true
+			default:
+				gr.NeedsStringDefault = true
+			}
+		}
+
+		services = append(services, gr)
+		return nil
+	})
+
+	if walkErr != nil {
+		return nil, walkErr
+	}
+
+	sort.Slice(services, func(i, j int) bool { return services[i].Name < services[j].Name })
+	return services, nil
+}
+
+func writeResource(outDir string, svc GenResource) error {
+	fileName := fmt.Sprintf("%s_resource.go", svc.Name)
+	filePath := filepath.Join(outDir, fileName)
+
+	tpl, err := template.New("resource").Funcs(template.FuncMap{
+		"ToCamel":          toCamel,
+		"ToSnake":          toSnake,
+		"ParamType":        paramType,
+		"ParamDefault":     paramDefault,
+		"ParamDefaultExpr": paramDefaultExpr,
+		"ParamFormat":      paramFormat,
+		"FixedParamExpr":   fixedParamExpr,
+		"bt":               func() string { return "`" },
+	}).Parse(resourceTemplate)
+	if err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+	if err := tpl.Execute(&buf, svc); err != nil {
+		return err
+	}
+
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		formatted = buf.Bytes()
+	}
+
+	return os.WriteFile(filePath, formatted, 0644)
+}
+
+func writeRegistry(outDir string, services []GenResource) error {
+	var buf bytes.Buffer
+	buf.WriteString("package resources_gen\n\n")
+	buf.WriteString("import \"github.com/hashicorp/terraform-plugin-framework/resource\"\n\n")
+	buf.WriteString("// Code generated by tools/gen. DO NOT EDIT.\n")
+	buf.WriteString("func AllResources() []func() resource.Resource {\n")
+	buf.WriteString("\treturn []func() resource.Resource{\n")
+	for _, svc := range services {
+		buf.WriteString(fmt.Sprintf("\t\tNew%[1]sResource,\n", toCamel(svc.Name)))
+	}
+	buf.WriteString("\t}\n")
+	buf.WriteString("}\n")
+
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		formatted = buf.Bytes()
+	}
+
+	return os.WriteFile(filepath.Join(outDir, "registry.go"), formatted, 0644)
+}
+
+func toCamel(s string) string {
+	parts := strings.FieldsFunc(s, func(r rune) bool { return r == '_' || r == '-' })
+	for i, p := range parts {
+		if len(p) == 0 {
+			continue
+		}
+		parts[i] = strings.ToUpper(p[:1]) + p[1:]
+	}
+	return strings.Join(parts, "")
+}
+
+func toSnake(s string) string {
+	var out []rune
+	for i, r := range s {
+		if i > 0 && r >= 'A' && r <= 'Z' {
+			out = append(out, '_')
+		}
+		out = append(out, rune(strings.ToLower(string(r))[0]))
+	}
+	return string(out)
+}
+
+func paramType(p Param) string {
+	switch strings.ToLower(p.Type) {
+	case "bool":
+		return "types.Bool"
+	case "int", "int64", "number":
+		return "types.Int64"
+	default:
+		return "types.String"
+	}
+}
+
+func paramDefault(p Param) string {
+	return p.Default
+}
+
+func paramDefaultExpr(p Param) string {
+	if p.Default == "" {
+		return ""
+	}
+	switch strings.ToLower(p.Type) {
+	case "bool":
+		val := strings.ToLower(p.Default)
+		return fmt.Sprintf("booldefault.StaticBool(%s)", val)
+	case "int", "int64", "number":
+		return fmt.Sprintf("int64default.StaticInt64(%s)", p.Default)
+	default:
+		return fmt.Sprintf("stringdefault.StaticString(%q)", p.Default)
+	}
+}
+
+func paramFormat(p Param, varName string) string {
+	switch strings.ToLower(p.Type) {
+	case "bool":
+		return fmt.Sprintf("formatBool(%s)", varName)
+	case "int", "int64", "number":
+		return fmt.Sprintf("formatInt64(%s)", varName)
+	default:
+		return fmt.Sprintf("formatString(%s)", varName)
+	}
+}
+
+const resourceTemplate = `package resources_gen
+
+import (
+	"context"
+	"strings"
+
+	"terraform-provider-nubes/internal/core"
+
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	{{- if .NeedsInt64Default }}
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	{{- end }}
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+)
+
+// Code generated by tools/gen. DO NOT EDIT.
+// Service: {{.Name}}
+// Service ID: {{.ServiceID}}
+
+var _ resource.Resource = &{{ToCamel .Name}}Resource{}
+var _ resource.ResourceWithModifyPlan = &{{ToCamel .Name}}Resource{}
+
+type {{ToCamel .Name}}Resource struct {
+	client *core.UniversalClient
+}
+
+type {{ToCamel .Name}}Model struct {
+	ID            types.String {{bt}}tfsdk:"id"{{bt}}
+	ResourceName  types.String {{bt}}tfsdk:"resource_name"{{bt}}
+{{- range .CreateParams }}
+	{{ToCamel .Code}} {{ParamType .}} {{bt}}tfsdk:"{{ToSnake .Code}}"{{bt}}
+{{- end }}
+	DeleteMode     types.String {{bt}}tfsdk:"delete_mode"{{bt}}
+	ResumeIfExists types.Bool   {{bt}}tfsdk:"resume_if_exists"{{bt}}
+}
+
+func New{{ToCamel .Name}}Resource() resource.Resource {
+	return &{{ToCamel .Name}}Resource{}
+}
+
+func (r *{{ToCamel .Name}}Resource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_{{.Name}}"
+}
+
+func (r *{{ToCamel .Name}}Resource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	attrs := map[string]schema.Attribute{
+		"id":           schema.StringAttribute{Computed: true},
+		"resource_name": schema.StringAttribute{Required: true},
+{{- range .CreateParams }}
+		"{{ToSnake .Code}}": schema.{{if eq (ParamType .) "types.Bool"}}Bool{{else if eq (ParamType .) "types.Int64"}}Int64{{else}}String{{end}}Attribute{
+			{{if .Required}}Required: true,{{else}}Optional: true,{{end}}
+			{{if and (ParamDefault .) (not .Required)}}Computed: true,{{end}}
+			{{if and (ParamDefault .) (not .Required)}}Default: {{ParamDefaultExpr .}},{{end}}
+		},
+{{- end }}
+		"delete_mode": schema.StringAttribute{
+			Optional: true,
+			Computed: true,
+			Default:  stringdefault.StaticString("{{if .DeleteMode}}{{.DeleteMode}}{{else}}state_only{{end}}"),
+		},
+		"resume_if_exists": schema.BoolAttribute{
+			Optional: true,
+			Computed: true,
+			Default:  booldefault.StaticBool({{if .ResumeIfExists}}true{{else}}false{{end}}),
+		},
+	}
+
+	resp.Schema = schema.Schema{Attributes: attrs}
+}
+
+func (r *{{ToCamel .Name}}Resource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if r.client == nil {
+		return
+	}
+
+	var config *{{ToCamel .Name}}Model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if config == nil {
+		return
+	}
+
+	var state *{{ToCamel .Name}}Model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if state != nil && !state.ID.IsNull() && !state.ID.IsUnknown() {
+		return
+	}
+
+	if config.ResourceName.IsNull() || config.ResourceName.IsUnknown() {
+		return
+	}
+	resumeIfExists := true
+	if !config.ResumeIfExists.IsNull() && !config.ResumeIfExists.IsUnknown() {
+		resumeIfExists = config.ResumeIfExists.ValueBool()
+	}
+
+	existing, err := r.client.FindInstanceByDisplayName(ctx, {{.ServiceID}}, config.ResourceName.ValueString())
+	if err != nil || existing == nil {
+		return
+	}
+
+	if !resumeIfExists {
+		resp.Diagnostics.AddError(
+			"RESOURCE WITH SAME NAME EXISTS",
+			"A resource with the same resource_name already exists. Set resume_if_exists=true to adopt or choose a different name.",
+		)
+		return
+	}
+
+	status := strings.ToLower(existing.ExplainedStatus)
+	if strings.Contains(status, "suspend") {
+		resp.Diagnostics.AddWarning(
+			"RESOURCE WITH SAME NAME EXISTS (SUSPENDED)",
+			"An existing resource with the same resource_name was found and is suspended. With resume_if_exists=true it will be resumed and adopted without applying new parameters. Run plan/apply again with changes to perform modify.",
+		)
+		return
+	}
+
+	resp.Diagnostics.AddWarning(
+		"RESOURCE WITH SAME NAME EXISTS",
+		"An existing resource with the same resource_name was found. With resume_if_exists=true it will be adopted without applying new parameters. Run plan/apply again with changes to perform modify.",
+	)
+}
+
+func (r *{{ToCamel .Name}}Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data {{ToCamel .Name}}Model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resourceName := data.ResourceName.ValueString()
+	if r.client != nil && !data.ResumeIfExists.IsNull() && !data.ResumeIfExists.IsUnknown() && data.ResumeIfExists.ValueBool() {
+		existing, err := r.client.FindInstanceByDisplayName(ctx, {{.ServiceID}}, resourceName)
+		if err == nil && existing != nil {
+			status := strings.ToLower(existing.ExplainedStatus)
+			if strings.Contains(status, "suspend") {
+				resp.Diagnostics.AddWarning(
+					"RESOURCE WITH SAME NAME EXISTS (SUSPENDED)",
+					"An existing resource with the same resource_name was found and is suspended. With resume_if_exists=true it will be resumed and adopted without applying new parameters. Run plan/apply again with changes to perform modify.",
+				)
+			} else {
+				resp.Diagnostics.AddWarning(
+					"RESOURCE WITH SAME NAME EXISTS",
+					"An existing resource with the same resource_name was found. With resume_if_exists=true it will be adopted without applying new parameters. Run plan/apply again with changes to perform modify.",
+				)
+			}
+		}
+	}
+
+	params := map[int]string{
+{{- range .CreateFixedParams }}
+		{{.ID}}: {{FixedParamExpr .}},
+{{- end }}
+{{- range .CreateParams }}
+		{{.ID}}: {{ParamFormat . (printf "data.%s" (ToCamel .Code))}},
+{{- end }}
+	}
+
+	id, err := CreateResource(ctx, r.client, {{.ServiceID}}, resourceName, data.ResumeIfExists.ValueBool(), params)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", err.Error())
+		return
+	}
+
+	data.ID = types.StringValue(id)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *{{ToCamel .Name}}Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data *{{ToCamel .Name}}Model
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if data == nil {
+		return
+	}
+	if r.client != nil && !data.ID.IsNull() && !data.ID.IsUnknown() {
+		state, err := r.client.GetInstanceState(ctx, data.ID.ValueString())
+		if err == nil && state != nil {
+			status := strings.ToLower(strings.TrimSpace(state.ExplainedStatus))
+			if state.IsDeleted || status == "deleted" {
+				resp.State.RemoveResource(ctx)
+				return
+			}
+		}
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, data)...)
+}
+
+func (r *{{ToCamel .Name}}Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan {{ToCamel .Name}}Model
+	var state {{ToCamel .Name}}Model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	instanceID := state.ID
+	if instanceID.IsNull() || instanceID.IsUnknown() {
+		instanceID = plan.ID
+	}
+	if instanceID.IsNull() || instanceID.IsUnknown() {
+		resp.Diagnostics.AddError("Client Error", "missing instance id for modify")
+		return
+	}
+
+	params := map[int]string{
+{{- range .ModifyParams }}
+		{{.ID}}: {{ParamFormat . (printf "plan.%s" (ToCamel .Code))}},
+{{- end }}
+	}
+
+	if err := UpdateResource(ctx, r.client, instanceID.ValueString(), params); err != nil {
+		resp.Diagnostics.AddError("Client Error", err.Error())
+		return
+	}
+
+	plan.ID = instanceID
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *{{ToCamel .Name}}Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state *{{ToCamel .Name}}Model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if state == nil || state.ID.IsNull() || state.ID.IsUnknown() {
+		return
+	}
+
+	if err := DeleteResource(ctx, r.client, state.ID.ValueString(), state.DeleteMode.ValueString()); err != nil {
+		resp.Diagnostics.AddError("Client Error", err.Error())
+		return
+	}
+}
+
+func (r *{{ToCamel .Name}}Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*core.UniversalClient)
+	if !ok {
+		resp.Diagnostics.AddError("Error", "Wrong client type expected *core.UniversalClient")
+		return
+	}
+
+	r.client = client
+}
+
+// format helpers live in resources_gen/helpers.go
+`
+
+type FixedParam struct {
+	ID    int
+	Value string
+}
+
+func splitCreateParams(serviceName string, params []Param) ([]Param, []FixedParam) {
+	if len(params) == 0 {
+		return nil, nil
+	}
+	return params, nil
+}
+
+func isResourceRealmParam(p Param) bool {
+	return strings.EqualFold(strings.TrimSpace(p.Code), "resourceRealm")
+}
+
+func fixedParamExpr(p FixedParam) string {
+	return fmt.Sprintf("formatString(types.StringValue(%q))", p.Value)
+}

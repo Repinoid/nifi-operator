@@ -1,0 +1,6 @@
+provider_installation {
+  dev_overrides {
+    "terra.k8c.ru/nubes/nubes" = "/home/naeel/terra/universal_rebuild"
+  }
+  direct {}
+}
