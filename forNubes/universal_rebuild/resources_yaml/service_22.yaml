@@ -1,0 +1,56 @@
+name: vc_nsxt
+service_id: 22
+create:
+    params:
+        - id: 8
+          code: vdcUid
+          type: string
+          required: false
+        - id: 340
+          code: needEnableAVI
+          type: bool
+          required: true
+          default: "false"
+        - id: 341
+          code: virtualServicesCount
+          type: int64
+          required: false
+          default: "1"
+        - id: 367
+          code: segroupName
+          type: string
+          required: false
+        - id: 621
+          code: vdcType
+          type: string
+          required: true
+          default: vdc
+        - id: 622
+          code: vdcGroupUid
+          type: string
+          required: false
+modify:
+    params:
+        - id: 368
+          code: needEnableAVI
+          type: bool
+          required: false
+        - id: 369
+          code: virtualServicesCount
+          type: int64
+          required: false
+        - id: 370
+          code: segroupName
+          type: string
+          required: false
+        - id: 371
+          code: needExternalAddressSNAT
+          type: bool
+          required: false
+        - id: 372
+          code: ipSpaceName
+          type: string
+          required: false
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

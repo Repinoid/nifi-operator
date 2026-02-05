@@ -1,0 +1,51 @@
+name: redis
+service_id: 91
+create:
+    params:
+        - id: 112
+          code: resourceCPU
+          type: int64
+          required: true
+          default: "1000"
+        - id: 113
+          code: resourceMemory
+          type: int64
+          required: true
+          default: "1024"
+        - id: 114
+          code: resourceDisk
+          type: int64
+          required: true
+          default: "30"
+        - id: 181
+          code: resourceInstances
+          type: int64
+          required: true
+          default: "1"
+        - id: 182
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 183
+          code: needExternalAddressMaster
+          type: bool
+          required: true
+          default: "false"
+        - id: 184
+          code: needExternalAddressSlave
+          type: bool
+          required: true
+          default: "false"
+        - id: 548
+          code: ipSpaceNameMaster
+          type: string
+          required: false
+        - id: 549
+          code: ipSpaceNameSlave
+          type: string
+          required: false
+modify:
+    params: []
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

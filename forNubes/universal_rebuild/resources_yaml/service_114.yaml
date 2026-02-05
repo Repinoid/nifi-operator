@@ -1,0 +1,9 @@
+name: GiteaComplex
+service_id: 114
+create:
+    params: []
+modify:
+    params: []
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

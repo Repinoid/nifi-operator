@@ -1,0 +1,120 @@
+name: mariadb
+service_id: 115
+create:
+    params:
+        - id: 422
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 424
+          code: resourceCPU
+          type: int64
+          required: true
+          default: "500"
+        - id: 425
+          code: resourceMemory
+          type: int64
+          required: true
+          default: "1024"
+        - id: 426
+          code: resourceDisk
+          type: int64
+          required: true
+          default: "1"
+        - id: 427
+          code: resourceInstances
+          type: int64
+          required: true
+          default: "1"
+        - id: 428
+          code: needExternalAddressMaster
+          type: bool
+          required: true
+          default: "false"
+        - id: 429
+          code: ipSpaceNameMaster
+          type: string
+          required: false
+        - id: 430
+          code: ext_BACKUP_SCHEDULE
+          type: string
+          required: false
+          default: 0 * * * *
+        - id: 431
+          code: appVersion
+          type: string
+          required: true
+          default: 9.4.0
+        - id: 432
+          code: autoScale
+          type: bool
+          required: true
+          default: "false"
+        - id: 433
+          code: autoScalePercentage
+          type: int64
+          required: false
+          default: "10"
+        - id: 434
+          code: autoScaleTechWindow
+          type: int64
+          required: false
+          default: "0"
+        - id: 435
+          code: autoScaleQuotaGb
+          type: int64
+          required: false
+          default: "1"
+        - id: 459
+          code: s3Uid
+          type: string
+          required: true
+modify:
+    params:
+        - id: 436
+          code: resourceCPU
+          type: int64
+          required: false
+        - id: 437
+          code: resourceMemory
+          type: int64
+          required: false
+        - id: 438
+          code: resourceInstances
+          type: int64
+          required: false
+        - id: 439
+          code: resourceDisk
+          type: int64
+          required: false
+        - id: 440
+          code: needExternalAddressMaster
+          type: bool
+          required: false
+        - id: 441
+          code: ipSpaceNameMaster
+          type: string
+          required: false
+        - id: 442
+          code: ext_BACKUP_SCHEDULE
+          type: string
+          required: false
+        - id: 443
+          code: autoScale
+          type: bool
+          required: false
+        - id: 444
+          code: autoScalePercentage
+          type: int64
+          required: false
+        - id: 445
+          code: autoScaleTechWindow
+          type: int64
+          required: false
+        - id: 446
+          code: autoScaleQuotaGb
+          type: int64
+          required: false
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

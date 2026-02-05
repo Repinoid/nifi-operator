@@ -1,0 +1,54 @@
+name: pgadmin
+service_id: 96
+create:
+    params:
+        - id: 164
+          code: domain
+          type: string
+          required: true
+          default: web01
+        - id: 165
+          code: resourceCPU
+          type: int64
+          required: true
+          default: "200"
+        - id: 166
+          code: resourceMemory
+          type: int64
+          required: true
+          default: "256"
+        - id: 167
+          code: resourceDisk
+          type: int64
+          required: true
+          default: "1"
+        - id: 169
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 170
+          code: login
+          type: string
+          required: true
+        - id: 171
+          code: password
+          type: string
+          required: true
+modify:
+    params:
+        - id: 172
+          code: resourceCPU
+          type: int64
+          required: false
+        - id: 173
+          code: resourceMemory
+          type: int64
+          required: false
+        - id: 174
+          code: resourceDisk
+          type: int64
+          required: false
+          default: "1"
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

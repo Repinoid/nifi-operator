@@ -1,0 +1,68 @@
+name: flask
+service_id: 89
+create:
+    params:
+        - id: 248
+          code: domain
+          type: string
+          required: true
+          default: web01
+        - id: 249
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 250
+          code: resourceCPU
+          type: int64
+          required: true
+          default: "300"
+        - id: 251
+          code: resourceMemory
+          type: int64
+          required: true
+          default: "256"
+        - id: 252
+          code: resourceInstances
+          type: int64
+          required: true
+          default: "1"
+        - id: 253
+          code: gitPath
+          type: string
+          required: true
+          default: https://github.com/Foxyhhd/Baldurs-Gate-test.git
+        - id: 254
+          code: jsonEnv
+          type: string
+          required: false
+          default: '{ &quot;param&quot;: &quot;value&quot; }'
+        - id: 255
+          code: healthPath
+          type: string
+          required: false
+modify:
+    params:
+        - id: 451
+          code: resourceCPU
+          type: int64
+          required: true
+        - id: 452
+          code: resourceMemory
+          type: int64
+          required: true
+        - id: 453
+          code: resourceInstances
+          type: int64
+          required: true
+        - id: 454
+          code: gitPath
+          type: string
+          required: true
+        - id: 455
+          code: jsonEnv
+          type: string
+          required: true
+          default: '{ "param": "value" }'
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

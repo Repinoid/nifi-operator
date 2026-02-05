@@ -1,0 +1,42 @@
+name: harbor
+service_id: 82
+create:
+    params:
+        - id: 16
+          code: domain
+          type: string
+          required: true
+          default: web01
+        - id: 17
+          code: emails
+          type: string
+          required: true
+          default: testuser1
+        - id: 110
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 228
+          code: resourceCPU
+          type: int64
+          required: true
+          default: "100"
+        - id: 229
+          code: resourceMemory
+          type: int64
+          required: true
+          default: "200"
+        - id: 230
+          code: resourceInstances
+          type: int64
+          required: true
+          default: "1"
+        - id: 231
+          code: s3Uid
+          type: string
+          required: true
+modify:
+    params: []
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

@@ -1,0 +1,80 @@
+name: nodejs
+service_id: 95
+create:
+    params:
+        - id: 149
+          code: domain
+          type: string
+          required: true
+          default: web01
+        - id: 150
+          code: gitPath
+          type: string
+          required: true
+          default: https://github.com/xahys/testnode.git
+        - id: 151
+          code: healthPath
+          type: string
+          required: false
+        - id: 152
+          code: jsonEnv
+          type: string
+          required: false
+        - id: 153
+          code: resourceCPU
+          type: int64
+          required: true
+          default: "500"
+        - id: 154
+          code: resourceMemory
+          type: int64
+          required: true
+          default: "1024"
+        - id: 155
+          code: resourceInstances
+          type: int64
+          required: true
+          default: "1"
+        - id: 156
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 270
+          code: appVersion
+          type: string
+          required: true
+          default: "23"
+modify:
+    params:
+        - id: 157
+          code: gitPath
+          type: string
+          required: false
+        - id: 158
+          code: healthPath
+          type: string
+          required: false
+        - id: 159
+          code: jsonEnv
+          type: string
+          required: false
+        - id: 160
+          code: resourceCPU
+          type: int64
+          required: false
+        - id: 161
+          code: resourceMemory
+          type: int64
+          required: false
+        - id: 162
+          code: resourceInstances
+          type: int64
+          required: false
+        - id: 271
+          code: appVersion
+          type: string
+          required: true
+          default: "23"
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

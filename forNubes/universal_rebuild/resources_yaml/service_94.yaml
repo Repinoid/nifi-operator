@@ -1,0 +1,81 @@
+name: lucee
+service_id: 94
+create:
+    params:
+        - id: 103
+          code: domain
+          type: string
+          required: true
+          default: web01
+        - id: 104
+          code: gitPath
+          type: string
+          required: true
+          default: https://github.com/xahys/testlucee
+        - id: 105
+          code: jsonEnv
+          type: string
+          required: false
+          default: '{ "param": "value" }'
+        - id: 106
+          code: resourceCPU
+          type: int64
+          required: true
+          default: "300"
+        - id: 107
+          code: resourceMemory
+          type: int64
+          required: true
+          default: "512"
+        - id: 108
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 132
+          code: healthPath
+          type: string
+          required: false
+        - id: 139
+          code: resourceInstances
+          type: int64
+          required: true
+          default: "1"
+        - id: 263
+          code: appVersion
+          type: string
+          required: true
+          default: "5.4"
+modify:
+    params:
+        - id: 133
+          code: gitPath
+          type: string
+          required: false
+        - id: 134
+          code: healthPath
+          type: string
+          required: false
+        - id: 135
+          code: jsonEnv
+          type: string
+          required: false
+        - id: 136
+          code: resourceCPU
+          type: int64
+          required: false
+        - id: 137
+          code: resourceMemory
+          type: int64
+          required: false
+        - id: 138
+          code: resourceInstances
+          type: int64
+          required: false
+        - id: 264
+          code: appVersion
+          type: string
+          required: true
+          default: "5.4"
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

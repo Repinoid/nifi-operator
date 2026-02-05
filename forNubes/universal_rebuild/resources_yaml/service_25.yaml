@@ -1,0 +1,91 @@
+name: vcexternalip
+service_id: 25
+create:
+    params:
+        - id: 140
+          code: serviceUid
+          type: string
+          required: true
+        - id: 141
+          code: dnatCreate
+          type: bool
+          required: true
+          default: "true"
+        - id: 142
+          code: internalPortAccess
+          type: string
+          required: true
+          default: "5432"
+        - id: 143
+          code: snatCreate
+          type: bool
+          required: false
+        - id: 144
+          code: internalAddrAccess
+          type: string
+          required: true
+        - id: 324
+          code: fromServiceNamespace
+          type: string
+          required: true
+        - id: 325
+          code: fromServiceCloudEdgeName
+          type: string
+          required: false
+        - id: 326
+          code: fromServiceCloudVdcName
+          type: string
+          required: false
+        - id: 327
+          code: fromServiceCloudOrgName
+          type: string
+          required: false
+        - id: 328
+          code: fromServiceCloudVmwareUrl
+          type: string
+          required: false
+        - id: 336
+          code: ipSpaceName
+          type: string
+          required: true
+        - id: 488
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 624
+          code: fromServiceCloudEdgeScope
+          type: string
+          required: false
+        - id: 626
+          code: fromServiceVdcGroupName
+          type: string
+          required: false
+modify:
+    params:
+        - id: 627
+          code: serviceUid
+          type: string
+          required: true
+        - id: 628
+          code: ipSpaceName
+          type: string
+          required: true
+        - id: 629
+          code: dnatCreate
+          type: bool
+          required: true
+        - id: 630
+          code: snatCreate
+          type: bool
+          required: true
+        - id: 631
+          code: internalPortAccess
+          type: string
+          required: true
+        - id: 632
+          code: internalAddrAccess
+          type: string
+          required: true
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

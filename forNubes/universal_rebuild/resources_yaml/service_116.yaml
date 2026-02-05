@@ -1,0 +1,63 @@
+name: kafka
+service_id: 116
+create:
+    params:
+        - id: 461
+          code: resourceInstances
+          type: int64
+          required: true
+        - id: 462
+          code: resourceMemory
+          type: int64
+          required: true
+        - id: 463
+          code: resourceCPU
+          type: int64
+          required: true
+        - id: 464
+          code: resourceDisk
+          type: int64
+          required: true
+        - id: 465
+          code: needExternalAddressMaster
+          type: bool
+          required: true
+          default: "false"
+        - id: 466
+          code: ipSpaceNameMaster
+          type: string
+          required: false
+        - id: 469
+          code: resourceRealm
+          type: string
+          required: true
+modify:
+    params:
+        - id: 501
+          code: resourceInstances
+          type: int64
+          required: false
+        - id: 502
+          code: resourceMemory
+          type: int64
+          required: false
+        - id: 503
+          code: resourceCPU
+          type: string
+          required: false
+        - id: 504
+          code: resourceDisk
+          type: int64
+          required: false
+        - id: 505
+          code: needExternalAddressMaster
+          type: bool
+          required: false
+          default: "false"
+        - id: 506
+          code: ipSpaceNameMaster
+          type: string
+          required: false
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

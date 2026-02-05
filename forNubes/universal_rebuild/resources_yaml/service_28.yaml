@@ -1,0 +1,96 @@
+name: vc_vm_v3
+service_id: 28
+create:
+    params:
+        - id: 407
+          code: vappUid
+          type: string
+          required: true
+        - id: 408
+          code: vmName
+          type: string
+          required: true
+          default: web01
+        - id: 409
+          code: vmCpu
+          type: int64
+          required: true
+          default: "1"
+        - id: 410
+          code: vmRam
+          type: int64
+          required: true
+          default: "1"
+        - id: 411
+          code: vmDisk
+          type: int64
+          required: false
+        - id: 412
+          code: ipSpaceName
+          type: string
+          required: false
+          default: no-needed
+        - id: 413
+          code: accessIpList
+          type: string
+          required: false
+        - id: 414
+          code: imageVm
+          type: string
+          required: true
+        - id: 415
+          code: cloudInit
+          type: string
+          required: false
+        - id: 416
+          code: userLogin
+          type: string
+          required: true
+          default: myuser
+        - id: 417
+          code: userPublicKey
+          type: string
+          required: true
+        - id: 448
+          code: accessPortList
+          type: string
+          required: true
+          default: '["22"]'
+        - id: 449
+          code: needAddZabbixTemplate
+          type: bool
+          required: true
+          default: "true"
+modify:
+    params:
+        - id: 493
+          code: vmCpu
+          type: int64
+          required: false
+        - id: 494
+          code: vmRam
+          type: int64
+          required: false
+        - id: 495
+          code: vmDisk
+          type: int64
+          required: false
+        - id: 496
+          code: ipSpaceName
+          type: string
+          required: false
+        - id: 497
+          code: accessIpList
+          type: string
+          required: false
+        - id: 498
+          code: accessPortList
+          type: string
+          required: false
+        - id: 499
+          code: needAddZabbixTemplate
+          type: bool
+          required: false
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

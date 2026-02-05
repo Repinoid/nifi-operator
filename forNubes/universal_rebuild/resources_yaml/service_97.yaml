@@ -1,0 +1,37 @@
+name: nodered
+service_id: 97
+create:
+    params:
+        - id: 193
+          code: resourceCPU
+          type: int64
+          required: true
+          default: "500"
+        - id: 194
+          code: resourceMemory
+          type: int64
+          required: true
+          default: "512"
+        - id: 195
+          code: resourceDisk
+          type: int64
+          required: true
+          default: "1"
+        - id: 196
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 197
+          code: domain
+          type: string
+          required: true
+        - id: 323
+          code: resourceInstances
+          type: int64
+          required: true
+          default: "1"
+modify:
+    params: []
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

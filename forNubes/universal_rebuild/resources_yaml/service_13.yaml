@@ -1,0 +1,42 @@
+name: s3bucket
+service_id: 13
+create:
+    params:
+        - id: 124
+          code: s3UserUid
+          type: string
+          required: true
+        - id: 125
+          code: bucketName
+          type: string
+          required: true
+        - id: 126
+          code: maxSize
+          type: string
+          required: true
+          default: "-1"
+        - id: 127
+          code: readAll
+          type: bool
+          required: true
+          default: "false"
+        - id: 128
+          code: listAll
+          type: bool
+          required: true
+          default: "false"
+        - id: 129
+          code: corsAll
+          type: bool
+          required: true
+          default: "false"
+        - id: 130
+          code: placement
+          type: string
+          required: true
+          default: HOT
+modify:
+    params: []
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

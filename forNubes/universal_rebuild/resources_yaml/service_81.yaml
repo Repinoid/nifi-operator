@@ -1,0 +1,43 @@
+name: superset
+service_id: 81
+create:
+    params:
+        - id: 14
+          code: domain
+          type: string
+          required: true
+          default: web01
+        - id: 20
+          code: emails
+          type: string
+          required: true
+          default: testuser1
+        - id: 96
+          code: resourceCPU
+          type: int64
+          required: true
+          default: "500"
+        - id: 97
+          code: resourceMemory
+          type: int64
+          required: true
+          default: "512"
+        - id: 98
+          code: resourceDisk
+          type: int64
+          required: true
+          default: "1"
+        - id: 109
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 227
+          code: resourceInstances
+          type: int64
+          required: true
+          default: "1"
+modify:
+    params: []
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

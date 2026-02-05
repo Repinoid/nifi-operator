@@ -1,0 +1,38 @@
+name: mongodb
+service_id: 92
+create:
+    params:
+        - id: 487
+          code: resourceInstances
+          type: int64
+          required: true
+        - id: 588
+          code: resourceMemory
+          type: int64
+          required: true
+        - id: 589
+          code: resourceCPU
+          type: int64
+          required: true
+        - id: 590
+          code: resourceDisk
+          type: int64
+          required: true
+        - id: 595
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 645
+          code: needExternalAddressMaster
+          type: string
+          required: true
+          default: "false"
+        - id: 646
+          code: ipSpaceNameMaster
+          type: string
+          required: false
+modify:
+    params: []
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

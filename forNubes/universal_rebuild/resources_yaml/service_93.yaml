@@ -1,0 +1,76 @@
+name: rabbitmq
+service_id: 93
+create:
+    params:
+        - id: 116
+          code: resourceCPU
+          type: int64
+          required: true
+          default: "1000"
+        - id: 117
+          code: resourceMemory
+          type: int64
+          required: true
+          default: "1124"
+        - id: 118
+          code: resourceDisk
+          type: int64
+          required: true
+          default: "30"
+        - id: 119
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 224
+          code: resourceInstances
+          type: int64
+          required: true
+          default: "1"
+        - id: 225
+          code: needExternalAddressMaster
+          type: bool
+          required: true
+          default: "false"
+        - id: 543
+          code: ipSpaceNameMaster
+          type: string
+          required: false
+modify:
+    params:
+        - id: 304
+          code: resourceCPU
+          type: int64
+          required: true
+        - id: 305
+          code: resourceMemory
+          type: int64
+          required: true
+        - id: 306
+          code: resourceDisk
+          type: int64
+          required: true
+        - id: 307
+          code: resourceInstances
+          type: int64
+          required: true
+        - id: 308
+          code: needExternalAddressMaster
+          type: bool
+          required: true
+          default: "false"
+        - id: 309
+          code: needExternalAddressSlave
+          type: bool
+          required: true
+          default: "false"
+        - id: 545
+          code: ipSpaceNameMaster
+          type: string
+          required: false
+        - id: 546
+          code: ipSpaceNameSlave
+          type: string
+          required: false
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

@@ -1,0 +1,58 @@
+name: gitea
+service_id: 99
+create:
+    params:
+        - id: 232
+          code: resourceCPU
+          type: int64
+          required: true
+          default: "500"
+        - id: 233
+          code: resourceMemory
+          type: int64
+          required: true
+          default: "512"
+        - id: 234
+          code: resourceDisk
+          type: int64
+          required: true
+          default: "1"
+        - id: 235
+          code: resourceInstances
+          type: int64
+          required: true
+          default: "1"
+        - id: 237
+          code: domain
+          type: string
+          required: true
+          default: web01
+        - id: 238
+          code: psqlUid
+          type: string
+          required: true
+modify:
+    params:
+        - id: 259
+          code: resourceCPU
+          type: int64
+          required: true
+          default: "100"
+        - id: 260
+          code: resourceMemory
+          type: int64
+          required: true
+          default: "128"
+        - id: 261
+          code: resourceDisk
+          type: int64
+          required: true
+          default: "1"
+        - id: 262
+          code: resourceInstances
+          type: int64
+          required: true
+          default: "1"
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

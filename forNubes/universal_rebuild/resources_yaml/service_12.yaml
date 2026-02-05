@@ -1,0 +1,29 @@
+name: s3
+service_id: 12
+create:
+    params:
+        - id: 163
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 320
+          code: displayName
+          type: string
+          required: true
+modify:
+    params:
+        - id: 50
+          code: maxSizeGbPerUser
+          type: int64
+          required: false
+        - id: 51
+          code: maxObjectsPerBucket
+          type: int64
+          required: false
+        - id: 52
+          code: maxBucketsPerUser
+          type: int64
+          required: false
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

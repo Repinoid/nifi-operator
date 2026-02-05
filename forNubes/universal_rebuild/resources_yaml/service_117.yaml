@@ -1,0 +1,33 @@
+name: nifi
+service_id: 117
+create:
+    params:
+        - id: 471
+          code: kafkaUid
+          type: string
+          required: true
+        - id: 472
+          code: partitions
+          type: int64
+          required: true
+        - id: 473
+          code: replicas
+          type: int64
+          required: true
+        - id: 474
+          code: nameTopic
+          type: string
+          required: true
+modify:
+    params:
+        - id: 477
+          code: partitions
+          type: int64
+          required: false
+        - id: 478
+          code: replicas
+          type: int64
+          required: false
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

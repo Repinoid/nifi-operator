@@ -1,0 +1,93 @@
+name: dummy
+service_id: 1
+create:
+    params:
+        - id: 198
+          code: durationMs
+          type: int64
+          required: true
+          default: "0"
+        - id: 199
+          code: failAtStart
+          type: bool
+          required: true
+          default: "false"
+        - id: 200
+          code: failInProgress
+          type: bool
+          required: true
+          default: "false"
+        - id: 201
+          code: whereFail
+          type: int64
+          required: false
+          default: "1"
+        - id: 242
+          code: resourceRealm
+          type: string
+          required: true
+        - id: 286
+          code: bodymessage
+          type: string
+          required: false
+        - id: 321
+          code: mapExample
+          type: string
+          required: false
+        - id: 322
+          code: jsonExample
+          type: string
+          required: false
+        - id: 396
+          code: nestedRefExample
+          type: string
+          required: false
+        - id: 447
+          code: yamlExample
+          type: string
+          required: false
+        - id: 647
+          code: mapFixed
+          type: string
+          required: false
+        - id: 654
+          code: arrayMapFixedExample
+          type: string
+          required: false
+modify:
+    params:
+        - id: 287
+          code: durationMs
+          type: int64
+          required: true
+          default: "0"
+        - id: 288
+          code: failAtStart
+          type: bool
+          required: true
+          default: "false"
+        - id: 289
+          code: failInProgress
+          type: bool
+          required: true
+          default: "false"
+        - id: 290
+          code: whereFail
+          type: int64
+          required: false
+        - id: 291
+          code: bodymessage
+          type: string
+          required: false
+        - id: 373
+          code: mapExample
+          type: string
+          required: false
+          default: '{}'
+        - id: 374
+          code: jsonExample
+          type: string
+          required: false
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

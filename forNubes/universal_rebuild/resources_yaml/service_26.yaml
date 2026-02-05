@@ -1,0 +1,21 @@
+name: vapp
+service_id: 26
+create:
+    params:
+        - id: 190
+          code: nsxtUid
+          type: string
+          required: true
+        - id: 191
+          code: vappName
+          type: string
+          required: true
+        - id: 623
+          code: vdcUid
+          type: string
+          required: true
+modify:
+    params: []
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true

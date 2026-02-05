@@ -1,0 +1,57 @@
+name: vc_vdc
+service_id: 21
+create:
+    params:
+        - id: 30
+          code: organizationUid
+          type: string
+          required: true
+        - id: 335
+          code: vdcProviderGateway
+          type: string
+          required: true
+        - id: 361
+          code: storageConfig
+          type: string
+          required: true
+        - id: 366
+          code: vdcNetworkPool
+          type: string
+          required: true
+        - id: 397
+          code: cpuGuaranteed
+          type: int64
+          required: true
+          default: "20"
+        - id: 398
+          code: memGuaranteed
+          type: int64
+          required: true
+          default: "20"
+        - id: 557
+          code: cpuAllocated
+          type: int64
+          required: true
+          default: "10"
+        - id: 558
+          code: memAllocated
+          type: int64
+          required: true
+          default: "20"
+modify:
+    params:
+        - id: 560
+          code: cpuAllocated
+          type: int64
+          required: true
+        - id: 561
+          code: memAllocated
+          type: int64
+          required: true
+        - id: 562
+          code: storageConfig
+          type: string
+          required: true
+lifecycle:
+    delete_mode_default: state_only
+    resume_if_exists_default: true
