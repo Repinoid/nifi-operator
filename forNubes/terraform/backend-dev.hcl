@@ -1,0 +1,9 @@
+bucket = "terra-tfstate-dev"
+key    = "dev/terraform.tfstate"
+endpoint = "minio.terra-dev.svc.cluster.local:9000"
+access_key = "MINIO_DEV_ACCESS_KEY"
+secret_key = "MINIO_DEV_SECRET_KEY"
+region = "us-east-1"
+skip_credentials_validation = true
+skip_metadata_api_check = true
+s3_force_path_style = true

@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry-server
+  namespace: terra
+spec:
+  template:
+    spec:
+      initContainers: []
+      volumes: []
+      containers:
+      - name: registry-server
+        image: naeel/terraform-registry-server:docs-dev
+        imagePullPolicy: Always
+        command: ["/app/registry-server"]
+        volumeMounts: []
+        env:
+        - name: REGISTRY_HOSTNAME
+          value: terra.k8c.ru
+        - name: MINIO_ENDPOINT
+          value: minio:9000
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              key: rootUser
+              name: minio-creds
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: rootPassword
+              name: minio-creds

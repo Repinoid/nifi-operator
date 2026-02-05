@@ -1,0 +1,23 @@
+# Build Stage
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+# Only copy what's needed for the registry server
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY cmd/registry ./cmd/registry
+# Build statically
+RUN CGO_ENABLED=0 GOOS=linux go build -o /registry-server ./cmd/registry
+
+# Run Stage
+FROM alpine:3.19
+WORKDIR /app
+COPY --from=builder /registry-server /app/registry-server
+# Registry server needs to talk to MinIO/HTTPS, so CA certs are good to have
+RUN apk add --no-cache ca-certificates
+
+USER 1000:1000
+EXPOSE 8080
+
+CMD ["/app/registry-server"]

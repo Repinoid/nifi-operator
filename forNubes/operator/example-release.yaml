@@ -1,0 +1,11 @@
+apiVersion: terra.core.nubes.ru/v1alpha1
+kind: TerraformProviderRelease
+metadata:
+  name: scaffolding-v0-0-1
+  namespace: terra
+spec:
+  providerName: "scaffolding"
+  namespace: "hashicorp"
+  version: "0.0.1"
+  gitRepo: "https://github.com/hashicorp/terraform-provider-scaffolding.git"
+  gitRef: "main"

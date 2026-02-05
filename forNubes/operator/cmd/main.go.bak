@@ -1,0 +1,232 @@
+package main
+
+import (
+	"context"
+	"log"
+	"os"
+	"time"
+
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+)
+
+var (
+	gvr = schema.GroupVersionResource{
+		Group:    "terra.core.nubes.ru",
+		Version:  "v1alpha1",
+		Resource: "providerreleases",
+	}
+	namespace = "terra"
+)
+
+func main() {
+	log.Println("Starting Terraform Provider Operator...")
+
+	// 1. Setup Clients
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		kubeconfig := os.Getenv("KUBECONFIG")
+		if kubeconfig == "" {
+			kubeconfig = os.Getenv("HOME") + "/.kube/config"
+		}
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			log.Fatalf("Error building kubeconfig: %v", err)
+		}
+	}
+
+	dynClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 2. Control Loop (Simple Polling for MVP)
+	log.Println("Entering control loop...")
+	reconcile(context.Background(), dynClient, clientset) // Run once immediately
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			reconcile(context.Background(), dynClient, clientset)
+		}
+	}
+}
+
+func reconcile(ctx context.Context, dynClient dynamic.Interface, clientset *kubernetes.Clientset) {
+	// List CRs
+	list, err := dynClient.Resource(gvr).Namespace(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		log.Printf("Error listing resources: %v", err)
+		return
+	}
+
+	if len(list.Items) > 0 {
+		log.Printf("Found %d items", len(list.Items))
+	}
+
+	for _, item := range list.Items {
+		reconcileItem(ctx, dynClient, clientset, item)
+	}
+}
+
+func reconcileItem(ctx context.Context, dynClient dynamic.Interface, clientset *kubernetes.Clientset, item unstructured.Unstructured) {
+	name := item.GetName()
+	status, _, _ := unstructured.NestedString(item.Object, "status", "phase")
+
+	// Default to Pending if empty
+	if status == "" {
+		updateStatus(ctx, dynClient, item, "Pending")
+		return
+	}
+
+	if status == "Pending" {
+		log.Printf("[%s] Found Pending release. Creating Job...", name)
+		if err := createBuildJob(ctx, clientset, item); err != nil {
+			log.Printf("[%s] Error creating job: %v", name, err)
+			return
+		}
+		updateStatus(ctx, dynClient, item, "Building")
+		return
+	}
+
+	if status == "Building" {
+		// Check Job Status
+		jobName := "build-" + name
+		job, err := clientset.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
+		if err != nil {
+			log.Printf("[%s] Error getting job %s: %v", name, jobName, err)
+			return
+		}
+
+		if job.Status.Succeeded > 0 {
+			log.Printf("[%s] Build Succeeded!", name)
+			updateStatus(ctx, dynClient, item, "Ready")
+			// Cleanup job optionally
+		} else if job.Status.Failed > 0 {
+			log.Printf("[%s] Build Failed!", name)
+			updateStatus(ctx, dynClient, item, "Failed")
+		}
+	}
+}
+
+func updateStatus(ctx context.Context, dynClient dynamic.Interface, item unstructured.Unstructured, phase string) {
+	// Ensure namespace is set explicitly
+	item.SetNamespace(namespace)
+
+	// Set status
+	status := map[string]interface{}{
+		"phase":      phase,
+		"lastUpdate": time.Now().String(),
+	}
+
+	// We need to set the nested field in the object map
+	err := unstructured.SetNestedMap(item.Object, status, "status")
+	if err != nil {
+		log.Printf("Error setting status map: %v", err)
+		return
+	}
+
+	_, err = dynClient.Resource(gvr).Namespace(namespace).UpdateStatus(ctx, &item, metav1.UpdateOptions{})
+	if err != nil {
+		log.Printf("Error updating status for %s/%s: %v", item.GetNamespace(), item.GetName(), err)
+	} else {
+		log.Printf("Updated status of %s to %s", item.GetName(), phase)
+	}
+}
+
+func createBuildJob(ctx context.Context, clientset *kubernetes.Clientset, item unstructured.Unstructured) error {
+	name := item.GetName()
+	jobName := "build-" + name
+
+	spec := item.Object["spec"].(map[string]interface{})
+	providerName := spec["providerName"].(string)
+	version := spec["version"].(string)
+	gitRepo := spec["gitRepo"].(string)
+	gitRef := spec["gitRef"].(string)
+	ns := "mycloud" // default
+	if v, ok := spec["namespace"].(string); ok {
+		ns = v
+	}
+
+	// Define Job
+	ttl := int32(3600)  // Cleanup after 1 hour
+	backoff := int32(0) // No retries for MVP to fail fast
+
+	job := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      jobName,
+			Namespace: namespace,
+		},
+		Spec: batchv1.JobSpec{
+			TTLSecondsAfterFinished: &ttl,
+			BackoffLimit:            &backoff,
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "builder"},
+				},
+				Spec: corev1.PodSpec{
+					RestartPolicy: corev1.RestartPolicyNever,
+					Containers: []corev1.Container{
+						{
+							Name:    "builder",
+							Image:   "golang:1.22-alpine", // Building on Alpine
+							Command: []string{"/bin/sh", "/scripts/build.sh"},
+							Env: []corev1.EnvVar{
+								{Name: "PROVIDER_NAME", Value: providerName},
+								{Name: "VERSION", Value: version},
+								{Name: "GIT_REPO", Value: gitRepo},
+								{Name: "GIT_REF", Value: gitRef},
+								{Name: "NAMESPACE", Value: ns},
+								{Name: "REGISTRY_HOSTNAME", Value: os.Getenv("REGISTRY_HOSTNAME")}, // Pass through hostname
+								{Name: "MINIO_ROOT_USER", ValueFrom: &corev1.EnvVarSource{SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "minio-creds"}, Key: "rootUser"}}},
+								{Name: "MINIO_ROOT_PASSWORD", ValueFrom: &corev1.EnvVarSource{SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "minio-creds"}, Key: "rootPassword"}}},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{Name: "scripts", MountPath: "/scripts"},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "scripts",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{Name: "builder-script"},
+									DefaultMode:          func(m int32) *int32 { return &m }(0755),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	// Note: In real world we need to install git, zip, curl in the init container or use a custom image.
+	// golang:1.22-alpine has git? No, usually needs 'apk add git zip curl'.
+	// I should tweak the command to install dependencies first.
+	job.Spec.Template.Spec.Containers[0].Command = []string{"/bin/sh", "-c", "apk add --no-cache git zip curl && /scripts/build.sh"}
+
+	// We also need minio client 'mc'.
+	// Easier to just download it. Using wget might be more robust on busybox/alpine.
+	// Also ensure we have git and zip.
+	job.Spec.Template.Spec.Containers[0].Command = []string{"/bin/sh", "-c",
+		"apk add --no-cache git zip && wget -O /usr/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc && chmod +x /usr/bin/mc && /scripts/build.sh"}
+
+	_, err := clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
+	return err
+}

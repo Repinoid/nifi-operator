@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: terraform-operator
+  namespace: terra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: terraform-operator
+  template:
+    metadata:
+      labels:
+        app: terraform-operator
+    spec:
+      serviceAccountName: terraform-operator
+      containers:
+      - name: operator
+        image: naeel/terraform-registry-operator:latest
+        imagePullPolicy: Always
+        env:
+        - name: REGISTRY_HOSTNAME
+          value: "terra.k8c.ru"
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"

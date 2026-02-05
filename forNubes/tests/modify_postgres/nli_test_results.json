@@ -1,0 +1,13 @@
+[
+  {
+    "test": "Test1-Fast",
+    "instruction": "сделай быстро",
+    "operation": "plan",
+    "duration_ms": 0,
+    "body_message": "null",
+    "where_fail": 0,
+    "status": "failed",
+    "error": "  on test_auto_nli.tf line 1, in resource \"nubes_tubulus_instance\" \"auto_test\":\n   1: resource \"nubes_tubulus_instance\" \"auto_test\" {\n\nFailed to get configuration from AI: GEMINI_API_KEY not f",
+    "timestamp": "2026-01-24T22:00:50+04:00"
+  }
+]

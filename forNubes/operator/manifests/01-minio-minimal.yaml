@@ -1,0 +1,104 @@
+# Minimal MinIO for Terraform Registry storage (MVP)
+# WARNING: Uses default credentials. CHANGE FOR PRODUCTION.
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-creds
+  namespace: terra
+type: Opaque
+stringData:
+  rootUser: "admin"
+  rootPassword: "password123" # Change this!
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: terra
+  labels:
+    app: minio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+      - name: minio
+        image: minio/minio:RELEASE.2024-01-18T22-51-28Z
+        args:
+        - server
+        - /data
+        - --console-address
+        - ":9001"
+        env:
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              name: minio-creds
+              key: rootUser
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: minio-creds
+              key: rootPassword
+        ports:
+        - containerPort: 9000
+          name: api
+        - containerPort: 9001
+          name: console
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        emptyDir: {} # Ephemeral for MVP. Use PVC for persistence.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: terra
+spec:
+  selector:
+    app: minio
+  ports:
+  - name: api
+    port: 9000
+    targetPort: 9000
+  - name: console
+    port: 9001
+    targetPort: 9001
+---
+# Helper job to create the initial bucket
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: run-minio-setup
+  namespace: terra
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: mc
+        image: minio/mc
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          # Wait for minio and set alias
+          echo "Connecting to MinIO..."
+          until mc alias set myminio http://minio:9000 admin password123; do 
+            echo "Waiting for MinIO..."
+            sleep 2
+          done
+          
+          # Create bucket for providers
+          mc mb myminio/terraform-providers --ignore-existing;
+          # Set policy public (readonly) for easy download
+          mc anonymous set download myminio/terraform-providers;

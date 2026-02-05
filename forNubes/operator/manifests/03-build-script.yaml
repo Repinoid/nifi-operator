@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: builder-script
+  namespace: terra
+data:
+  build.sh: |
+    #!/bin/sh
+    set -e
+
+    echo ">>> Starting Build for $PROVIDER_NAME $VERSION"
+    
+    # 1. Setup Environment
+    # Inputs: GIT_REPO, GIT_REF, PROVIDER_NAME, VERSION
+    WORK_DIR="/workspace"
+    ARTIFACTS_DIR="/artifacts"
+    mkdir -p $WORK_DIR $ARTIFACTS_DIR
+
+    # 2. Clone Repository
+    echo ">>> Cloning $GIT_REPO ($GIT_REF)..."
+    git clone $GIT_REPO $WORK_DIR/src
+    cd $WORK_DIR/src
+    git checkout $GIT_REF
+
+    # 3. Build for Platforms
+    # Hardcoded platforms for MVP: linux/amd64, windows/amd64
+    # Naming convention: terraform-provider-NAME_vVERSION_OS_ARCH.zip
+    
+    echo ">>> Building binaries..."
+    
+    # Linux amd64
+    echo "--> linux/amd64"
+    GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o terraform-provider-${PROVIDER_NAME}_v${VERSION}
+    zip ${ARTIFACTS_DIR}/terraform-provider-${PROVIDER_NAME}_${VERSION}_linux_amd64.zip terraform-provider-${PROVIDER_NAME}_v${VERSION}
+    rm terraform-provider-${PROVIDER_NAME}_v${VERSION}
+
+    # Windows amd64
+    echo "--> windows/amd64"
+    GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o terraform-provider-${PROVIDER_NAME}_v${VERSION}.exe
+    zip ${ARTIFACTS_DIR}/terraform-provider-${PROVIDER_NAME}_${VERSION}_windows_amd64.zip terraform-provider-${PROVIDER_NAME}_v${VERSION}.exe
+    rm terraform-provider-${PROVIDER_NAME}_v${VERSION}.exe
+
+    # 4. Checksums
+    cd $ARTIFACTS_DIR
+    sha256sum *.zip > terraform-provider-${PROVIDER_NAME}_${VERSION}_SHA256SUMS
+    
+    # 5. GPG Sign (Mock for MVP - empty sig or skip if client allows, but Terraform strict. 
+    # For now we will generate a dummy signature to satisfy file existence, real signing requires GPG private key in env)
+    # Ideally: gpg --detach-sign --armor terraform-provider-..._SHA256SUMS
+    touch terraform-provider-${PROVIDER_NAME}_${VERSION}_SHA256SUMS.sig
+
+    # 6. Upload to MinIO
+    # Layout: /terraform-providers/hostname/namespace/name/version/
+    # We will use 'REGISTRY_HOSTNAME' env var if set, else default.
+    
+    if [ -z "$REGISTRY_HOSTNAME" ]; then
+      REGISTRY_HOSTNAME="terra.k8c.ru"
+    fi
+    
+    TARGET_PATH="terraform-providers/$REGISTRY_HOSTNAME/${NAMESPACE}/${PROVIDER_NAME}/${VERSION}"
+    
+    echo ">>> Uploading to MinIO path: $TARGET_PATH"
+    
+    # Configure mc using env vars
+    mc alias set myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
+    
+    # Upload files
+    mc cp --recursive $ARTIFACTS_DIR/ myminio/$TARGET_PATH/
+
+    # 7. Generate shasums file for download (Terraform download protocol requires a checksums.txt usually or just the sums file)
+    # We are following the provider registry protocol loosely. 
+    # The most important part for discovery is the 'index.json' or 'versions' endpoint, but we are static hosting.
+    # We rely on the directory structure.
+    
+    echo ">>> Build Complete!"

@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry-server
+  namespace: terra
+  labels:
+    app: registry-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry-server
+  template:
+    metadata:
+      labels:
+        app: registry-server
+    spec:
+      initContainers:
+      - name: download-bin
+        image: minio/mc
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          mc alias set myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
+          mc cp myminio/binaries/registry-server /shared/registry-server
+          chmod +x /shared/registry-server
+        env:
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              name: minio-creds
+              key: rootUser
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: minio-creds
+              key: rootPassword
+        volumeMounts:
+        - name: shared-bin
+          mountPath: /shared
+      containers:
+      - name: registry-server
+        image: naeel/terraform-registry-server:latest
+        command: ["/bin/sh", "-c", "/shared/registry-server"]
+        imagePullPolicy: Always
+        env:
+        - name: REGISTRY_HOSTNAME
+          value: "terra.k8c.ru"
+        - name: MINIO_ENDPOINT
+          value: "minio:9000"
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              name: minio-creds
+              key: rootUser
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: minio-creds
+              key: rootPassword
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: shared-bin
+          mountPath: /shared
+      volumes:
+      - name: shared-bin
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry-server
+  namespace: terra
+spec:
+  selector:
+    app: registry-server
+  ports:
+  - port: 80
+    targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: registry-ingress
+  namespace: terra
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+  - hosts:
+    - terra.k8c.ru
+    secretName: registry-tls
+  rules:
+  - host: terra.k8c.ru
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: registry-server
+            port:
+              number: 80

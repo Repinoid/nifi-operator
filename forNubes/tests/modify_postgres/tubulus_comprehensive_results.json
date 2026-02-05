@@ -1,0 +1,92 @@
+[
+  {
+    "scenario": "destroy",
+    "test": "Test1-Destroy",
+    "instruction": "сделай быстро",
+    "operation": "apply",
+    "status": "failed",
+    "error": "   1: resource \"nubes_tubulus_instance\" \"test\" {\n\nFailed to get configuration from AI: Post\n\"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?%24alt=json%3",
+    "timestamp": "2026-01-25T10:18:05+04:00"
+  },
+  {
+    "scenario": "destroy",
+    "test": "Test2-Destroy",
+    "instruction": "работай 30 секунд",
+    "operation": "apply",
+    "status": "failed",
+    "error": "Content-Type: application/json Content-Length: 119 Version: 1.0.217\nStrict-Transport-Security: max-age=31536000; includeSubDomains\nX-Content-Type-Options: nosniff Referrer-Policy: origin X-Frame-Optio",
+    "timestamp": "2026-01-25T10:18:21+04:00"
+  },
+  {
+    "scenario": "destroy",
+    "test": "Test3-Destroy",
+    "instruction": "напиши в вольт секрет_123",
+    "operation": "plan",
+    "status": "failed",
+    "error": "\nError: Gemini AI Error\n\n  with nubes_tubulus_instance.advanced3,\n  on test_ai_advanced.tf line 13, in resource \"nubes_tubulus_instance\" \"advanced3\":\n  13: resource \"nubes_tubulus_instance\" \"ad",
+    "timestamp": "2026-01-25T10:18:32+04:00"
+  },
+  {
+    "scenario": "destroy",
+    "test": "Test4-Destroy",
+    "instruction": "сломайся на 2 этапе",
+    "operation": "apply",
+    "status": "failed",
+    "error": "Content-Type: application/json Content-Length: 119 Version: 1.0.217\nStrict-Transport-Security: max-age=31536000; includeSubDomains\nX-Content-Type-Options: nosniff Referrer-Policy: origin X-Frame-Optio",
+    "timestamp": "2026-01-25T10:18:47+04:00"
+  },
+  {
+    "scenario": "destroy",
+    "test": "Test5-Destroy",
+    "instruction": "долго долго работай",
+    "operation": "apply",
+    "status": "failed",
+    "error": "Content-Type: application/json Content-Length: 119 Version: 1.0.217\nStrict-Transport-Security: max-age=31536000; includeSubDomains\nX-Content-Type-Options: nosniff Referrer-Policy: origin X-Frame-Optio",
+    "timestamp": "2026-01-25T10:18:57+04:00"
+  },
+  {
+    "scenario": "remove",
+    "test": "Test1-Remove",
+    "instruction": "сделай на 5 секунд",
+    "operation": "create",
+    "status": "failed",
+    "error": "Content-Type: application/json Content-Length: 119 Version: 1.0.217\nStrict-Transport-Security: max-age=31536000; includeSubDomains\nX-Content-Type-Options: nosniff Referrer-Policy: origin X-Frame-Optio",
+    "timestamp": "2026-01-25T10:19:06+04:00"
+  },
+  {
+    "scenario": "remove",
+    "test": "Test2-Remove",
+    "instruction": "быстро быстро",
+    "operation": "create",
+    "status": "failed",
+    "error": "Content-Type: application/json Content-Length: 119 Version: 1.0.217\nStrict-Transport-Security: max-age=31536000; includeSubDomains\nX-Content-Type-Options: nosniff Referrer-Policy: origin X-Frame-Optio",
+    "timestamp": "2026-01-25T10:19:21+04:00"
+  },
+  {
+    "scenario": "remove",
+    "test": "Test3-Remove",
+    "instruction": "положи текст hello_world",
+    "operation": "create",
+    "status": "failed",
+    "error": "Content-Type: application/json Content-Length: 119 Version: 1.0.217\nStrict-Transport-Security: max-age=31536000; includeSubDomains\nX-Content-Type-Options: nosniff Referrer-Policy: origin X-Frame-Optio",
+    "timestamp": "2026-01-25T10:19:29+04:00"
+  },
+  {
+    "scenario": "remove",
+    "test": "Test4-Remove",
+    "instruction": "сломайся сразу",
+    "operation": "create",
+    "status": "failed",
+    "error": "Content-Type: application/json Content-Length: 119 Version: 1.0.217\nStrict-Transport-Security: max-age=31536000; includeSubDomains\nX-Content-Type-Options: nosniff Referrer-Policy: origin X-Frame-Optio",
+    "timestamp": "2026-01-25T10:19:38+04:00"
+  },
+  {
+    "scenario": "remove",
+    "test": "Test5-Remove",
+    "instruction": "работай минуту",
+    "operation": "create",
+    "status": "failed",
+    "error": "Content-Type: application/json Content-Length: 119 Version: 1.0.217\nStrict-Transport-Security: max-age=31536000; includeSubDomains\nX-Content-Type-Options: nosniff Referrer-Policy: origin X-Frame-Optio",
+    "timestamp": "2026-01-25T10:19:45+04:00"
+  }
+]

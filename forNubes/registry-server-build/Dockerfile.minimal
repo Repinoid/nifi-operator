@@ -1,0 +1,10 @@
+# Super minimal Registry Server Dockerfile
+FROM alpine:3.19
+WORKDIR /app
+COPY registry-server-bin /app/registry-server
+RUN apk add --no-cache ca-certificates
+
+USER 1000:1000
+EXPOSE 8080
+
+CMD ["/app/registry-server"]

@@ -1,0 +1,39 @@
+site_name: Nubes Terraform Provider
+site_url: https://terra.k8c.ru/docs/nubes/nubes/2.0.0/
+
+exclude_docs: |
+  README.md
+  ai_universal_provider_gen.md
+  00_overview/*
+  20_discovery/*
+  40_analysis/*
+  50_history/*
+  60_strategy/*
+  70_api/*
+  help/*
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  logo: 30_registry/assets/favicon.png
+  favicon: 30_registry/assets/favicon.png
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+
+nav:
+  - Home: index.md
+  - Resources:
+      - Index: 30_registry/resources/index.md
+      - All resources (table): 30_registry/resources/all_resources.md
+  - Guides:
+      - Getting started: 30_registry/guides/getting-started.md
+      - Terraform basics: 30_registry/guides/terraform-basics.md

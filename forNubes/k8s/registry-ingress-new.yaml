@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: registry-ingress
+  namespace: terra
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - terra.k8c.ru
+    secretName: registry-tls
+  rules:
+  - host: terra.k8c.ru
+    http:
+      paths:
+      - path: "/()(.*)"
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: registry-server
+            port:
+              number: 80

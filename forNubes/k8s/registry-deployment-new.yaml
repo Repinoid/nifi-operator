@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry-server
+  namespace: terra
+  labels:
+    app: registry-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry-server
+  template:
+    metadata:
+      labels:
+        app: registry-server
+    spec:
+      containers:
+      - name: registry-server
+        image: naeel/terraform-registry-server:docs-dev
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: REGISTRY_HOSTNAME
+          value: "terra.k8c.ru"
+        - name: S3_ENDPOINT
+          value: "s3.msk-1.ngcloud.ru"
+        - name: S3_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: s3-credentials
+              key: access-key
+        - name: S3_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: s3-credentials
+              key: secret-key
+        - name: S3_BUCKET
+          value: "terraform-registry"
+        - name: S3_USE_SSL
+          value: "true"
